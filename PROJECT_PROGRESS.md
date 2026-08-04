@@ -331,6 +331,10 @@ allowing the language model to guess. The Pi was independently verified at 18:47
 with NTP active and the clock synchronized; the earlier 15:47 answer was therefore a
 model hallucination, not a Pi clock fault. Five gateway command tests pass.
 
+After confirming the time response was correct, listening feedback requested slightly
+more output. Firmware `0.8.2-voice-tuning` raises speech from level 114 to 128 (about
+12% additional gain at the current setting); expression tones remain unchanged.
+
 ## Useful commands
 
 ```powershell
