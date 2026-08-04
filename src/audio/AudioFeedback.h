@@ -12,6 +12,8 @@ class AudioFeedback {
   void playExpression(Expression expression);
   void update(uint32_t nowMs);
   void toggleMute();
+  void suspend();
+  void resume();
   bool muted() const { return muted_; }
 
  private:
@@ -29,6 +31,8 @@ class AudioFeedback {
   uint8_t index_ = 0;
   uint32_t nextToneMs_ = 0;
   bool muted_ = false;
+  bool suspended_ = false;
+  uint8_t hardwareVolume_ = 0;
 };
 
 }  // namespace firechan

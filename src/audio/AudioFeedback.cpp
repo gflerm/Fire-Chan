@@ -8,7 +8,8 @@ void AudioFeedback::begin(uint8_t volumePercent, bool muted) {
   M5.Mic.end();
   M5.Speaker.begin();
   // Cap expression cues below the speaker's full hardware range.
-  M5.Speaker.setVolume(static_cast<uint8_t>(volumePercent * 96U / 100U));
+  hardwareVolume_ = static_cast<uint8_t>(volumePercent * 96U / 100U);
+  M5.Speaker.setVolume(hardwareVolume_);
   muted_ = muted;
   Serial.printf("[AUDIO] non-blocking cues ready volume=%u%% muted=%s\n",
                 volumePercent, muted_ ? "true" : "false");
@@ -30,7 +31,7 @@ void AudioFeedback::add(uint16_t frequency, uint16_t durationMs, uint16_t gapMs)
 
 void AudioFeedback::playExpression(Expression expression) {
   clear();
-  if (muted_) return;
+  if (muted_ || suspended_) return;
   switch (expression) {
     case Expression::Happy: add(784, 70); add(988, 95); break;
     case Expression::Excited: add(880, 55); add(1175, 55); add(1568, 90); break;
@@ -51,7 +52,8 @@ void AudioFeedback::playExpression(Expression expression) {
 }
 
 void AudioFeedback::update(uint32_t nowMs) {
-  if (muted_ || index_ >= count_ || static_cast<int32_t>(nowMs - nextToneMs_) < 0) return;
+  if (muted_ || suspended_ || index_ >= count_ ||
+      static_cast<int32_t>(nowMs - nextToneMs_) < 0) return;
   const ToneStep& tone = queue_[index_++];
   M5.Speaker.tone(tone.frequency, tone.durationMs);
   nextToneMs_ = nowMs + tone.durationMs + tone.gapMs;
@@ -67,6 +69,21 @@ void AudioFeedback::toggleMute() {
     add(880, 80);
     nextToneMs_ = millis();
   }
+}
+
+void AudioFeedback::suspend() {
+  clear();
+  M5.Speaker.stop();
+  M5.Speaker.end();
+  suspended_ = true;
+  Serial.println("[AUDIO] suspended for microphone capture");
+}
+
+void AudioFeedback::resume() {
+  M5.Speaker.begin();
+  M5.Speaker.setVolume(hardwareVolume_);
+  suspended_ = false;
+  Serial.println("[AUDIO] resumed after microphone capture");
 }
 
 }  // namespace firechan

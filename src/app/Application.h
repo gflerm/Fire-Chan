@@ -10,6 +10,7 @@
 #include "app/EventBus.h"
 #include "config/AppConfig.h"
 #include "storage/ConfigManager.h"
+#include "voice/VoiceRecorder.h"
 
 namespace firechan {
 
@@ -21,6 +22,7 @@ class Application {
  private:
   AppEventType mapInputEvent(InputEvent event) const;
   void applyAction(const BehaviorAction& action);
+  void handleCommandEvent(const AppEvent& event);
 
   FaceEngine face_;
   InputManager input_;
@@ -30,6 +32,7 @@ class Application {
   BehaviorEngine behavior_;
   AppConfig config_;
   ConfigManager configManager_;
+  VoiceRecorder voice_;
   bool faceReady_ = false;
 };
 

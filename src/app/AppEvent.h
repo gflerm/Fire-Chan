@@ -6,6 +6,10 @@ namespace firechan {
 
 enum class AppEventType : uint8_t {
   None,
+  VoiceCaptureRequested,
+  VoiceCaptureStopRequested,
+  VoiceRecordingReady,
+  VoiceRecordingFailed,
   PreviousExpression,
   NextExpression,
   ToggleDemo,
@@ -39,4 +43,3 @@ struct AppEvent {
 const char* appEventName(AppEventType type);
 
 }  // namespace firechan
-

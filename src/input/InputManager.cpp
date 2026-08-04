@@ -6,7 +6,8 @@ namespace firechan {
 
 const char* inputEventName(InputEvent event) {
   switch (event) {
-    case InputEvent::PreviousExpression: return "button-a/previous";
+    case InputEvent::StartVoiceCapture: return "button-a/voice-start";
+    case InputEvent::StopVoiceCapture: return "button-a/voice-stop";
     case InputEvent::NextExpression: return "button-b/next";
     case InputEvent::ToggleDemo: return "button-c/toggle-demo";
     case InputEvent::ToggleSound: return "button-c-long/toggle-sound";
@@ -28,14 +29,17 @@ void InputManager::begin(const AppConfig& config) {
 
 InputState InputManager::update(uint32_t nowMs) {
   InputState state;
-  if (M5.BtnC.wasHold()) {
+  if (M5.BtnA.wasPressed()) {
+    state.event = InputEvent::StartVoiceCapture;
+    gestures_.noteInteraction(nowMs);
+  } else if (M5.BtnA.wasReleased()) {
+    state.event = InputEvent::StopVoiceCapture;
+    gestures_.noteInteraction(nowMs);
+  } else if (M5.BtnC.wasHold()) {
     state.event = InputEvent::ToggleSound;
     gestures_.noteInteraction(nowMs);
   } else if (M5.BtnB.wasHold()) {
     state.event = InputEvent::ResetNeutral;
-    gestures_.noteInteraction(nowMs);
-  } else if (M5.BtnA.wasClicked()) {
-    state.event = InputEvent::PreviousExpression;
     gestures_.noteInteraction(nowMs);
   } else if (M5.BtnB.wasClicked()) {
     state.event = InputEvent::NextExpression;

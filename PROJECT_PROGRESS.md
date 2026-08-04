@@ -7,7 +7,7 @@
 
 ## Current milestone
 
-Phases 0–3 are substantially complete: the repository/toolchain, hardware baseline, face engine, modular inputs, event bus, and behavior engine all run on the physical device. Phase 4 local audio has non-blocking expression cues, volume, and persistent mute; SD sound packs and alarm playback remain. The storage/configuration foundation is running as firmware version `0.5.0-config`. Phase 5 networking is next.
+Phases 0–3 are substantially complete: the repository/toolchain, hardware baseline, face engine, modular inputs, event bus, and behavior engine all run on the physical device. Phase 4 local audio has non-blocking expression cues, volume, and persistent mute; SD sound packs and alarm playback remain. The storage/configuration foundation is complete, and the first Phase 8 push-to-talk input milestone is running as firmware version `0.6.0-voice-input`. Networking and cloud-backed transcription remain next.
 
 ## Completed
 
@@ -44,6 +44,32 @@ Phases 0–3 are substantially complete: the repository/toolchain, hardware base
 - [x] Added safe fallback behavior when NVS or microSD is unavailable.
 - [x] Applied configuration to the face, audio, RGB, gesture, inactivity, and behavior modules.
 - [x] Built, uploaded, and exercised firmware version `0.5.0-config`.
+- [x] Remapped Button A to specification-aligned hold-to-talk voice capture.
+- [x] Added a modular, bounded, non-PSRAM voice recorder.
+- [x] Streamed 16 kHz, 16-bit mono WAV prompts to `/recordings/last_prompt.wav` on microSD.
+- [x] Added Listening and Thinking behavior transitions around voice capture.
+- [x] Suspended the speaker during recording to avoid microphone feedback.
+- [x] Replaced the slow M5Unified analog-I2S path with an exact-rate GPIO34 timer sampler.
+- [x] Captured a 3.546-second physical voice test as a 113,500-byte WAV without buffer overrun.
+- [x] Built, uploaded, and exercised firmware version `0.6.0-voice-input`.
+
+## Voice input milestone
+
+| Item | Result |
+|---|---|
+| Control | Hold Button A to record; release to stop |
+| Privacy feedback | Listening face and RGB state while recording |
+| Post-capture feedback | Thinking face |
+| Recording format | 16 kHz, signed 16-bit, mono WAV |
+| Recording path | `/recordings/last_prompt.wav` |
+| Maximum duration | 12 seconds, configurable and validated |
+| Buffering | Two 4096-sample internal-RAM buffers |
+| PSRAM dependency | None |
+| Physical duration test | 3.546 seconds |
+| Recorded payload | 113,500 bytes |
+| Buffer overrun | None observed |
+| Face rate while recording | approximately 17 FPS |
+| Remaining voice path | STT, local command routing, optional AI, TTS playback |
 
 ## Storage and configuration milestone
 
@@ -171,9 +197,9 @@ Face implementation modules:
 | Arduino ESP32 framework | 3.20017.241212 |
 | M5Unified | 0.2.19 |
 | Adafruit NeoPixel | 1.15.5 |
-| Firmware | `0.5.0-config` |
-| Static RAM use | 26,372 bytes (0.6%) |
-| Flash use | 577,709 bytes (8.8%) |
+| Firmware | `0.6.0-voice-input` |
+| Static RAM use | 42,884 bytes (0.9%) |
+| Flash use | 590,425 bytes (9.0%) |
 | Build | PASS |
 | Upload | PASS |
 
@@ -242,12 +268,13 @@ Battery percentage is available, but battery voltage is currently reported as 0 
 
 ## Next development steps
 
-1. Complete Phase 4 with microSD sound-pack playback and reusable alarm audio.
-2. Start Phase 5 with a non-blocking Wi-Fi connection service and reconnect state machine.
-3. Add captive provisioning without embedding credentials in the repository.
-4. Expose device status and configuration through a small local web interface and HTTP API.
-5. Keep local face, gestures, and audio fully operational during network loss.
-6. Continue the separate PSRAM hardware/configuration investigation without blocking feature work.
+1. Add a non-blocking Wi-Fi connection service, reconnect state machine, and captive provisioning.
+2. Submit the captured WAV to a speech-to-text service without storing credentials in source control.
+3. Route recognized text through local commands before an optional conversational AI service.
+4. Add streamed text-to-speech playback with the Speaking face and mouth animation.
+5. Complete Phase 4 with microSD sound-pack playback and reusable alarm audio.
+6. Keep local face, gestures, and audio operational during network or cloud failure.
+7. Continue the separate PSRAM hardware/configuration investigation without blocking feature work.
 
 ## Useful commands
 

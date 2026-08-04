@@ -6,7 +6,8 @@ namespace firechan {
 
 AppEventType Application::mapInputEvent(InputEvent event) const {
   switch (event) {
-    case InputEvent::PreviousExpression: return AppEventType::PreviousExpression;
+    case InputEvent::StartVoiceCapture: return AppEventType::VoiceCaptureRequested;
+    case InputEvent::StopVoiceCapture: return AppEventType::VoiceCaptureStopRequested;
     case InputEvent::NextExpression: return AppEventType::NextExpression;
     case InputEvent::ToggleDemo: return AppEventType::ToggleDemo;
     case InputEvent::ToggleSound: return AppEventType::ToggleSound;
@@ -18,6 +19,20 @@ AppEventType Application::mapInputEvent(InputEvent event) const {
     case InputEvent::Inactive: return AppEventType::InactivityStarted;
     case InputEvent::DeepSleepy: return AppEventType::DeepInactivityStarted;
     default: return AppEventType::None;
+  }
+}
+
+void Application::handleCommandEvent(const AppEvent& event) {
+  if (event.type == AppEventType::VoiceCaptureRequested && !voice_.recording()) {
+    audio_.suspend();
+    if (voice_.start(event.timestampMs)) {
+      events_.publish(AppEventType::ListeningStarted, event.timestampMs);
+    } else {
+      audio_.resume();
+      events_.publish(AppEventType::VoiceRecordingFailed, event.timestampMs);
+    }
+  } else if (event.type == AppEventType::VoiceCaptureStopRequested) {
+    voice_.requestStop();
   }
 }
 
@@ -47,11 +62,13 @@ void Application::begin() {
   Serial.println(" Fire-chan event-driven personality test");
   Serial.printf(" Firmware: %s\n", FIRECHAN_VERSION);
   Serial.printf(" PSRAM: %u bytes (optional)\n", ESP.getPsramSize());
-  Serial.println(" A=previous, B=next, C=auto/manual, hold B=neutral, hold C=mute");
+  Serial.println(" Hold A=push-to-talk, B=next, C=auto/manual");
+  Serial.println(" Hold B=neutral, hold C=mute");
   Serial.println(" Tilt=gaze, pickup=surprised, shake=confused, face-down=sleep");
   Serial.println("========================================");
 
   configManager_.begin(config_);
+  voice_.begin(configManager_.sdAvailable(), config_.maxRecordingSeconds);
   input_.begin(config_);
   faceReady_ = face_.begin(config_.displayBrightnessPercent);
   rgb_.begin(config_.rgbBrightnessPercent);
@@ -70,12 +87,22 @@ void Application::update() {
 
   const AppEventType inputEvent = mapInputEvent(input.event);
   if (inputEvent != AppEventType::None) events_.publish(inputEvent, now);
+
+  const VoiceRecorderEvent voiceEvent = voice_.update(now);
+  if (voiceEvent == VoiceRecorderEvent::RecordingReady) {
+    audio_.resume();
+    events_.publish(AppEventType::VoiceRecordingReady, now);
+  } else if (voiceEvent == VoiceRecorderEvent::RecordingFailed) {
+    audio_.resume();
+    events_.publish(AppEventType::VoiceRecordingFailed, now);
+  }
   behavior_.tick(now, events_);
 
   AppEvent event;
   while (events_.next(event)) {
     Serial.printf("[EVENT] dispatch=%s pending=%u\n", appEventName(event.type),
                   events_.pending());
+    handleCommandEvent(event);
     applyAction(behavior_.handle(event));
   }
 

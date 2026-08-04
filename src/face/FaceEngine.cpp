@@ -143,8 +143,8 @@ void FaceEngine::update(uint32_t nowMs, bool demoMode) {
   canvas_.drawString(expressionName(renderExpression_), 160, 221);
   canvas_.setTextDatum(top_left);
   canvas_.setTextColor(0x7BEF, background);
-  canvas_.drawString(demoMode ? "AUTO A/B:step C:pause holdC:mute"
-                              : "MANUAL A/B:step C:auto holdC:mute",
+  canvas_.drawString(demoMode ? "Hold A:talk B:step C:pause holdC:mute"
+                              : "Hold A:talk B:step C:auto holdC:mute",
                      6, 228);
   canvas_.pushSprite(0, 0);
   reportFrameRate(nowMs);

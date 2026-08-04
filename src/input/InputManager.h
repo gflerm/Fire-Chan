@@ -9,7 +9,8 @@ namespace firechan {
 
 enum class InputEvent : uint8_t {
   None,
-  PreviousExpression,
+  StartVoiceCapture,
+  StopVoiceCapture,
   NextExpression,
   ToggleDemo,
   ToggleSound,

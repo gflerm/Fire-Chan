@@ -29,6 +29,7 @@ bool ConfigManager::loadNvs(AppConfig& config) {
   config.gestureSensitivityPercent = preferences.getUChar("gesture", 100);
   config.sleepyAfterSeconds = preferences.getUShort("sleepy", 30);
   config.sleepingAfterSeconds = preferences.getUShort("sleeping", 60);
+  config.maxRecordingSeconds = preferences.getUChar("maxvoice", 12);
   config.muted = preferences.getBool("muted", false);
   config.demoMode = preferences.getBool("demo", true);
   preferences.end();
@@ -47,6 +48,7 @@ bool ConfigManager::saveNvs(const AppConfig& config) {
   ok &= preferences.putUChar("gesture", config.gestureSensitivityPercent) > 0;
   ok &= preferences.putUShort("sleepy", config.sleepyAfterSeconds) > 0;
   ok &= preferences.putUShort("sleeping", config.sleepingAfterSeconds) > 0;
+  ok &= preferences.putUChar("maxvoice", config.maxRecordingSeconds) > 0;
   ok &= preferences.putBool("muted", config.muted) > 0;
   ok &= preferences.putBool("demo", config.demoMode) > 0;
   preferences.end();
@@ -82,6 +84,10 @@ bool ConfigManager::writeSdBackup(const AppConfig& config) {
   file.printf("    \"sensitivity\": %u,\n", config.gestureSensitivityPercent);
   file.printf("    \"sleepy_after_seconds\": %u,\n", config.sleepyAfterSeconds);
   file.printf("    \"sleeping_after_seconds\": %u\n", config.sleepingAfterSeconds);
+  file.printf("  },\n");
+  file.printf("  \"assistant\": {\n");
+  file.printf("    \"push_to_talk\": true,\n");
+  file.printf("    \"max_recording_seconds\": %u\n", config.maxRecordingSeconds);
   file.printf("  }\n");
   file.printf("}\n");
   file.flush();
@@ -107,12 +113,13 @@ void ConfigManager::begin(AppConfig& config) {
   Serial.printf("[CONFIG] microSD=%s backup=%s\n",
                 sdAvailable_ ? "ready" : "unavailable",
                 writeSdBackup(config) ? "ok" : "skipped/failed");
-  Serial.printf("[CONFIG] display=%u%% volume=%u%% muted=%s demo=%s rgb=%u%% gesture=%u%% idle=%us/%us\n",
+  Serial.printf("[CONFIG] display=%u%% volume=%u%% muted=%s demo=%s rgb=%u%% gesture=%u%% idle=%us/%us voice=%us\n",
                 config.displayBrightnessPercent, config.volumePercent,
                 config.muted ? "true" : "false",
                 config.demoMode ? "true" : "false",
                 config.rgbBrightnessPercent, config.gestureSensitivityPercent,
-                config.sleepyAfterSeconds, config.sleepingAfterSeconds);
+                config.sleepyAfterSeconds, config.sleepingAfterSeconds,
+                config.maxRecordingSeconds);
 }
 
 void ConfigManager::markDirty(uint32_t nowMs) {

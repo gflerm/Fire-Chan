@@ -13,6 +13,7 @@ struct AppConfig {
   uint8_t gestureSensitivityPercent = 100;
   uint16_t sleepyAfterSeconds = 30;
   uint16_t sleepingAfterSeconds = 60;
+  uint8_t maxRecordingSeconds = 12;
   bool muted = false;
   bool demoMode = true;
 
@@ -25,6 +26,7 @@ struct AppConfig {
     sleepingAfterSeconds = constrain(sleepingAfterSeconds,
                                      static_cast<uint16_t>(sleepyAfterSeconds + 5),
                                      static_cast<uint16_t>(7200));
+    maxRecordingSeconds = constrain(maxRecordingSeconds, 1, 30);
   }
 };
 

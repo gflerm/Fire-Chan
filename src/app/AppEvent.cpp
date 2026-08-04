@@ -4,6 +4,10 @@ namespace firechan {
 
 const char* appEventName(AppEventType type) {
   switch (type) {
+    case AppEventType::VoiceCaptureRequested: return "voice-capture-requested";
+    case AppEventType::VoiceCaptureStopRequested: return "voice-capture-stop-requested";
+    case AppEventType::VoiceRecordingReady: return "voice-recording-ready";
+    case AppEventType::VoiceRecordingFailed: return "voice-recording-failed";
     case AppEventType::PreviousExpression: return "previous-expression";
     case AppEventType::NextExpression: return "next-expression";
     case AppEventType::ToggleDemo: return "toggle-demo";
@@ -32,4 +36,3 @@ const char* appEventName(AppEventType type) {
 }
 
 }  // namespace firechan
-

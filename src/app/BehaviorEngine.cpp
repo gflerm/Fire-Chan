@@ -70,6 +70,14 @@ BehaviorAction BehaviorEngine::handle(const AppEvent& event) {
   BehaviorAction action;
   action.demoMode = demoMode_;
   switch (event.type) {
+    case AppEventType::VoiceRecordingReady:
+      listening_ = false;
+      setTemporaryExpression(Expression::Thinking, event.timestampMs, 1800);
+      break;
+    case AppEventType::VoiceRecordingFailed:
+      listening_ = false;
+      setTemporaryExpression(Expression::Error, event.timestampMs, 2500);
+      break;
     case AppEventType::PreviousExpression:
       setDemoMode(false, event.timestampMs, action);
       setBaseExpression(previousExpression(activeExpression_));
