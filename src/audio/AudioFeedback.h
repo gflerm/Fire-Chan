@@ -12,6 +12,7 @@ class AudioFeedback {
   void playExpression(Expression expression);
   void update(uint32_t nowMs);
   void toggleMute();
+  void setMuted(bool muted);
   void suspend();
   void resume();
   bool muted() const { return muted_; }

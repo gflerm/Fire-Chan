@@ -62,7 +62,12 @@ void AudioFeedback::update(uint32_t nowMs) {
 }
 
 void AudioFeedback::toggleMute() {
-  muted_ = !muted_;
+  setMuted(!muted_);
+}
+
+void AudioFeedback::setMuted(bool muted) {
+  if (muted_ == muted) return;
+  muted_ = muted;
   clear();
   if (muted_) M5.Speaker.stop();
   Serial.printf("[AUDIO] muted=%s\n", muted_ ? "true" : "false");

@@ -13,6 +13,7 @@
 #include "storage/ConfigManager.h"
 #include "voice/VoiceRecorder.h"
 #include "network/NetworkManager.h"
+#include "assistant/AssistantDirective.h"
 #include "assistant/VoiceGatewayClient.h"
 
 namespace firechan {
@@ -25,6 +26,8 @@ class Application {
  private:
   AppEventType mapInputEvent(InputEvent event) const;
   void applyAction(const BehaviorAction& action);
+  void applyPendingAssistantDirective(uint32_t nowMs);
+  void setAudioMuted(bool muted, uint32_t nowMs);
   void handleCommandEvent(const AppEvent& event);
 
   FaceEngine face_;
@@ -39,6 +42,8 @@ class Application {
   NetworkManager network_;
   VoiceGatewayClient voiceGateway_;
   ResponseAudioPlayer responsePlayer_;
+  AssistantDirective pendingDirective_;
+  bool hasPendingDirective_ = false;
   bool faceReady_ = false;
 };
 

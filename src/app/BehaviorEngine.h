@@ -4,6 +4,7 @@
 
 #include "app/AppEvent.h"
 #include "app/EventBus.h"
+#include "assistant/AssistantDirective.h"
 #include "face/Expression.h"
 
 namespace firechan {
@@ -21,6 +22,8 @@ class BehaviorEngine {
   void begin(uint32_t nowMs, bool demoMode);
   void tick(uint32_t nowMs, EventBus& events);
   BehaviorAction handle(const AppEvent& event);
+  BehaviorAction applyAssistantDirective(const AssistantDirective& directive,
+                                         uint32_t nowMs);
 
   Expression expression() const { return activeExpression_; }
   bool demoMode() const { return demoMode_; }

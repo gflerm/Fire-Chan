@@ -152,4 +152,27 @@ BehaviorAction BehaviorEngine::handle(const AppEvent& event) {
   return action;
 }
 
+BehaviorAction BehaviorEngine::applyAssistantDirective(
+    const AssistantDirective& directive, uint32_t nowMs) {
+  BehaviorAction action;
+  action.demoMode = demoMode_;
+
+  if (directive.action == AssistantAction::Sleep) {
+    // A sleep command is persistent and takes precedence over its sleepy hint.
+    temporaryUntilMs_ = 0;
+    temporaryExpiryQueued_ = false;
+    setBaseExpression(Expression::Sleeping);
+  } else {
+    if (directive.action == AssistantAction::Wake) {
+      setBaseExpression(Expression::Neutral);
+    }
+    if (directive.hasExpression) {
+      setTemporaryExpression(directive.expression, nowMs, 3000);
+    }
+  }
+
+  resolveAction(action);
+  return action;
+}
+
 }  // namespace firechan

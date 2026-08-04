@@ -40,9 +40,7 @@ void Application::handleCommandEvent(const AppEvent& event) {
 void Application::applyAction(const BehaviorAction& action) {
   const uint32_t now = millis();
   if (action.toggleSound) {
-    audio_.toggleMute();
-    config_.muted = audio_.muted();
-    configManager_.markDirty(now);
+    setAudioMuted(!audio_.muted(), now);
   }
   if (action.demoModeChanged) {
     config_.demoMode = action.demoMode;
@@ -55,6 +53,28 @@ void Application::applyAction(const BehaviorAction& action) {
     audio_.playExpression(action.expression);
     Serial.printf("[BEHAVIOR] resolved=%s\n", expressionName(action.expression));
   }
+}
+
+void Application::setAudioMuted(bool muted, uint32_t nowMs) {
+  if (audio_.muted() == muted) return;
+  audio_.setMuted(muted);
+  config_.muted = muted;
+  configManager_.markDirty(nowMs);
+}
+
+void Application::applyPendingAssistantDirective(uint32_t nowMs) {
+  if (!hasPendingDirective_) return;
+  if (pendingDirective_.action == AssistantAction::Mute) {
+    setAudioMuted(true, nowMs);
+  } else if (pendingDirective_.action == AssistantAction::Unmute) {
+    setAudioMuted(false, nowMs);
+  }
+  Serial.printf("[ASSISTANT] apply expression=%s action=%s\n",
+                pendingDirective_.hasExpression
+                    ? expressionName(pendingDirective_.expression) : "none",
+                AssistantDirectiveParser::actionName(pendingDirective_.action));
+  applyAction(behavior_.applyAssistantDirective(pendingDirective_, nowMs));
+  hasPendingDirective_ = false;
 }
 
 void Application::begin() {
@@ -108,6 +128,14 @@ void Application::update() {
 
   const VoiceGatewayEvent gatewayEvent = voiceGateway_.update();
   if (gatewayEvent == VoiceGatewayEvent::ResponseReady) {
+    pendingDirective_ = AssistantDirectiveParser::parse(
+        voiceGateway_.expression(), voiceGateway_.action());
+    hasPendingDirective_ = true;
+    // Unmute must happen before deciding whether Ember may speak. Mute is
+    // deliberately deferred until her acknowledgement has finished.
+    if (pendingDirective_.action == AssistantAction::Unmute) {
+      setAudioMuted(false, now);
+    }
     events_.publish(AppEventType::AssistantResponseReady, now);
     if (!audio_.muted()) {
       audio_.suspend();
@@ -115,8 +143,11 @@ void Application::update() {
         events_.publish(AppEventType::SpeakingStarted, now);
       } else {
         audio_.resume();
+        applyPendingAssistantDirective(now);
         events_.publish(AppEventType::AssistantRequestFailed, now);
       }
+    } else {
+      applyPendingAssistantDirective(now);
     }
   } else if (gatewayEvent == VoiceGatewayEvent::RequestFailed) {
     Serial.printf("[ASSISTANT] request failed: %s\n", voiceGateway_.error());
@@ -127,10 +158,12 @@ void Application::update() {
   if (playbackEvent == ResponseAudioEvent::PlaybackFinished) {
     audio_.resume();
     events_.publish(AppEventType::SpeakingStopped, now);
+    applyPendingAssistantDirective(now);
   } else if (playbackEvent == ResponseAudioEvent::PlaybackFailed) {
     audio_.resume();
     Serial.printf("[PLAYBACK] failed: %s\n", responsePlayer_.error());
     events_.publish(AppEventType::SpeakingStopped, now);
+    applyPendingAssistantDirective(now);
     events_.publish(AppEventType::AssistantRequestFailed, now);
   }
   behavior_.tick(now, events_);

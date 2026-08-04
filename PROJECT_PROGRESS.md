@@ -7,7 +7,7 @@
 
 ## Current milestone
 
-Phases 0–3 are substantially complete: the repository/toolchain, hardware baseline, face engine, modular inputs, event bus, and behavior engine all run on the physical device. Phase 4 local audio has non-blocking expression cues, volume, and persistent mute; SD sound packs and alarm playback remain. The storage/configuration foundation is complete, and the first Phase 8 push-to-talk input milestone is running as firmware version `0.6.0-voice-input`. Networking and cloud-backed transcription remain next.
+Phases 0–3 and the local voice-assistant round trip are substantially complete. Fire-chan records prompts, sends them to the Raspberry Pi Ember gateway, plays the local reply, and keeps the face responsive without PSRAM. Firmware `0.9.0-assistant-directives` adds gateway-driven emotional reactions and the sleep, wake, mute, and unmute device actions. SD sound packs, alarm playback, Wi-Fi provisioning, and longer stability testing remain.
 
 ## Completed
 
@@ -52,6 +52,11 @@ Phases 0–3 are substantially complete: the repository/toolchain, hardware base
 - [x] Replaced the slow M5Unified analog-I2S path with an exact-rate GPIO34 timer sampler.
 - [x] Captured a 3.546-second physical voice test as a 113,500-byte WAV without buffer overrun.
 - [x] Built, uploaded, and exercised firmware version `0.6.0-voice-input`.
+- [x] Completed local Pi-based STT, conversation, and TTS with Ember.
+- [x] Streamed Ember's response audio from microSD without PSRAM.
+- [x] Accepted dedicated speech output level 141 after physical listening tests.
+- [x] Added a modular parser for gateway expression and action hints.
+- [x] Added deferred sleep, wake, mute, and unmute behavior so acknowledgements finish first.
 
 ## Voice input milestone
 
@@ -197,9 +202,9 @@ Face implementation modules:
 | Arduino ESP32 framework | 3.20017.241212 |
 | M5Unified | 0.2.19 |
 | Adafruit NeoPixel | 1.15.5 |
-| Firmware | `0.6.0-voice-input` |
-| Static RAM use | 42,884 bytes (0.9%) |
-| Flash use | 590,425 bytes (9.0%) |
+| Firmware | `0.9.0-assistant-directives` |
+| Static RAM use | 72,272 bytes (1.6%) |
+| Flash use | 1,082,037 bytes (16.5%) |
 | Build | PASS |
 | Upload | PASS |
 
@@ -268,9 +273,9 @@ Battery percentage is available, but battery voltage is currently reported as 0 
 
 ## Next development steps
 
-1. Apply local action and expression hints returned by the gateway.
+1. Physically verify the new emotional hints and sleep, wake, mute, and unmute voice commands.
 2. Add captive Wi-Fi provisioning and move the compiled local credentials into NVS.
-3. Tune Ember's voice volume, pace, and personality after listening tests.
+3. Refine Ember's pace and personality after additional listening tests; retain speech level 141 as the accepted volume baseline.
 4. Complete Phase 4 with microSD sound-pack playback and reusable alarm audio.
 5. Run longer multi-turn stability, reconnection, and audio-interruption tests.
 6. Continue the separate PSRAM hardware/configuration investigation without blocking feature work.
@@ -337,6 +342,20 @@ more output. Firmware `0.8.2-voice-tuning` raises speech from level 114 to 128 (
 
 Firmware `0.8.3-voice-tuning` applies the next listening adjustment, raising speech
 from level 128 to 141 (about 10%) while leaving expression tones unchanged.
+
+Physical listening feedback accepted speech level 141 as the baseline. Firmware
+`0.9.0-assistant-directives` parses Ember's expression and action hints in a dedicated
+module. Emotional hints become temporary reactions after speech, while sleep and wake
+change the resting state. Mute is applied after Ember says “Muted”; unmute is applied
+before playback so its confirmation can be heard. Informational `time` and `status`
+actions deliberately do not change device state.
+
+Firmware `0.9.0-assistant-directives` built and uploaded successfully to COM5. The
+verified boot mounted microSD, initialized the Ember client and three-buffer player,
+retained speech level 141, and rejoined Wi-Fi at `192.168.8.124` (-27 dBm). The face
+loop remained stable at 27.6–27.7 FPS with about 79.7 KB free heap. The known PSRAM
+test still fails before application startup, while the firmware continues normally
+without it. Spoken command behavior remains the next physical user check.
 
 ## Useful commands
 
