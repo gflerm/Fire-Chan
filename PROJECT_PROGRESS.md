@@ -335,6 +335,9 @@ After confirming the time response was correct, listening feedback requested sli
 more output. Firmware `0.8.2-voice-tuning` raises speech from level 114 to 128 (about
 12% additional gain at the current setting); expression tones remain unchanged.
 
+Firmware `0.8.3-voice-tuning` applies the next listening adjustment, raising speech
+from level 128 to 141 (about 10%) while leaving expression tones unchanged.
+
 ## Useful commands
 
 ```powershell
