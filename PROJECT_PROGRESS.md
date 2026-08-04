@@ -7,7 +7,7 @@
 
 ## Current milestone
 
-Phase 0 (repository and toolchain) is complete. Phase 1 (hardware diagnostics) is substantially complete with PSRAM investigation and manual checks outstanding. Phase 2 (face engine) is implemented and running on hardware; final visual approval is outstanding.
+Phase 0 (repository and toolchain) is complete. Phase 1 (hardware diagnostics) is substantially complete with PSRAM investigation and manual checks outstanding. Phase 2 (face engine) is implemented and approved on hardware. Expression-driven personality feedback is now running as firmware version `0.3.0-personality`.
 
 ## Completed
 
@@ -26,6 +26,11 @@ Phase 0 (repository and toolchain) is complete. Phase 1 (hardware diagnostics) i
 - [x] Added automatic expression showcase and manual button controls.
 - [x] Added filtered pickup, shake, face-down, face-up, and inactivity gesture handling.
 - [x] Built, uploaded, and exercised firmware version `0.2.0-face` on the physical device.
+- [x] Added blink-covered expression transitions and background color blending.
+- [x] Added non-blocking expression sound cues in a dedicated audio module.
+- [x] Added animated expression-specific lighting for all ten RGB LEDs.
+- [x] Added long-C sound mute/unmute control.
+- [x] Built, uploaded, and exercised firmware version `0.3.0-personality`.
 
 ## Face milestone
 
@@ -61,6 +66,19 @@ Runtime test results:
 | Physical appearance approval | Pending user observation |
 | Buttons and physical IMU gestures | Pending; no events were received during the timed manual capture |
 
+Personality feedback test results:
+
+| Item | Result |
+|---|---|
+| Expression transitions | PASS; blink-covered transition remains non-blocking |
+| RGB feedback scheduler | PASS; initialized and ran alongside the face |
+| Audio cue scheduler | PASS; initialized and queued cues without blocking |
+| Combined frame rate | 27.8 FPS |
+| Combined free heap | approximately 237 KB and stable |
+| Pickup gesture | PASS; physical event captured |
+| Long-C mute | PASS; physical button event captured and mute state changed |
+| Remaining buttons/gestures | Manual confirmation still required |
+
 Test controls:
 
 | Input | Test action |
@@ -69,6 +87,7 @@ Test controls:
 | Button B | Next expression and pause automatic showcase |
 | Button C | Toggle automatic/manual showcase |
 | Hold Button B | Return to Neutral |
+| Hold Button C | Mute or unmute expression sounds |
 | Tilt | Move pupils |
 | Pick up | Temporary Surprised reaction |
 | Shake | Temporary Confused reaction |
@@ -87,6 +106,8 @@ Face implementation modules:
 - `src/face/FaceEngine.*`
 - `src/input/GestureDetector.*`
 - `src/input/InputManager.*`
+- `src/audio/AudioFeedback.*`
+- `src/hardware/RgbFeedback.*`
 
 ## Build baseline
 
@@ -98,9 +119,9 @@ Face implementation modules:
 | Arduino ESP32 framework | 3.20017.241212 |
 | M5Unified | 0.2.19 |
 | Adafruit NeoPixel | 1.15.5 |
-| Firmware | `0.2.0-face` |
-| Static RAM use | 25,784 bytes (0.6%) |
-| Flash use | 491,801 bytes (7.5%) |
+| Firmware | `0.3.0-personality` |
+| Static RAM use | 26,016 bytes (0.6%) |
+| Flash use | 524,181 bytes (8.0%) |
 | Build | PASS |
 | Upload | PASS |
 

@@ -11,6 +11,7 @@ enum class InputEvent : uint8_t {
   PreviousExpression,
   NextExpression,
   ToggleDemo,
+  ToggleSound,
   ResetNeutral,
   Shake,
   PickedUp,
@@ -41,4 +42,3 @@ class InputManager {
 const char* inputEventName(InputEvent event);
 
 }  // namespace firechan
-

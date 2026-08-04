@@ -4,6 +4,8 @@
 
 #include "face/FaceEngine.h"
 #include "input/InputManager.h"
+#include "audio/AudioFeedback.h"
+#include "hardware/RgbFeedback.h"
 
 namespace firechan {
 
@@ -18,6 +20,8 @@ class Application {
 
   FaceEngine face_;
   InputManager input_;
+  AudioFeedback audio_;
+  RgbFeedback rgb_;
   bool demoMode_ = true;
   bool faceReady_ = false;
   uint32_t nextDemoMs_ = 0;
@@ -26,4 +30,3 @@ class Application {
 };
 
 }  // namespace firechan
-

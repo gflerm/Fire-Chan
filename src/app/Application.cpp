@@ -13,20 +13,25 @@ void Application::begin() {
   Serial.println(" Fire-chan face and gesture test");
   Serial.printf(" Firmware: %s\n", FIRECHAN_VERSION);
   Serial.printf(" PSRAM: %u bytes (optional)\n", ESP.getPsramSize());
-  Serial.println(" A=previous, B=next, C=auto/manual, hold B=neutral");
+  Serial.println(" A=previous, B=next, C=auto/manual, hold B=neutral, hold C=mute");
   Serial.println(" Tilt=gaze, pickup=surprised, shake=confused, face-down=sleep");
   Serial.println("========================================");
 
   input_.begin();
   faceReady_ = face_.begin();
+  rgb_.begin();
+  audio_.begin();
   const uint32_t now = millis();
   nextDemoMs_ = now + kDemoPeriodMs;
-  face_.setExpression(Expression::Neutral);
+  rgb_.setExpression(Expression::Neutral);
+  audio_.playExpression(Expression::Neutral);
 }
 
 void Application::setExpression(Expression expression, uint32_t nowMs,
                                 uint32_t durationMs) {
   face_.setExpression(expression);
+  rgb_.setExpression(expression);
+  audio_.playExpression(expression);
   temporaryUntilMs_ = durationMs ? nowMs + durationMs : 0;
   if (!durationMs) baseExpression_ = expression;
 }
@@ -47,6 +52,9 @@ void Application::handleInput(InputEvent event, uint32_t nowMs) {
       demoMode_ = !demoMode_;
       nextDemoMs_ = nowMs + kDemoPeriodMs;
       Serial.printf("[FACE] demo=%s\n", demoMode_ ? "on" : "off");
+      break;
+    case InputEvent::ToggleSound:
+      audio_.toggleMute();
       break;
     case InputEvent::ResetNeutral:
       demoMode_ = false;
@@ -84,7 +92,7 @@ void Application::update() {
 
   if (temporaryUntilMs_ && static_cast<int32_t>(now - temporaryUntilMs_) >= 0) {
     temporaryUntilMs_ = 0;
-    face_.setExpression(baseExpression_);
+    setExpression(baseExpression_, now);
   }
 
   if (demoMode_ && temporaryUntilMs_ == 0 &&
@@ -94,7 +102,8 @@ void Application::update() {
   }
 
   if (faceReady_) face_.update(now, demoMode_);
+  rgb_.update(now);
+  audio_.update(now);
 }
 
 }  // namespace firechan
-

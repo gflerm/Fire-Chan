@@ -3,6 +3,21 @@
 namespace firechan {
 namespace {
 constexpr uint32_t kFramePeriodMs = 33;
+constexpr uint32_t kTransitionDurationMs = 280;
+
+uint16_t blend565(uint16_t from, uint16_t to, float amount) {
+  amount = constrain(amount, 0.0f, 1.0f);
+  const int fr = (from >> 11) & 0x1F;
+  const int fg = (from >> 5) & 0x3F;
+  const int fb = from & 0x1F;
+  const int tr = (to >> 11) & 0x1F;
+  const int tg = (to >> 5) & 0x3F;
+  const int tb = to & 0x1F;
+  const int r = fr + static_cast<int>((tr - fr) * amount);
+  const int g = fg + static_cast<int>((tg - fg) * amount);
+  const int b = fb + static_cast<int>((tb - fb) * amount);
+  return (r << 11) | (g << 5) | b;
+}
 }
 
 FaceEngine::FaceEngine() : canvas_(&M5.Display) {}
@@ -26,7 +41,10 @@ bool FaceEngine::begin() {
 
 void FaceEngine::setExpression(Expression expression) {
   if (expression_ == expression) return;
+  fromExpression_ = renderExpression_;
   expression_ = expression;
+  transitionStartMs_ = millis();
+  transitioning_ = true;
   Serial.printf("[FACE] expression=%s\n", expressionName(expression_));
 }
 
@@ -90,26 +108,46 @@ void FaceEngine::update(uint32_t nowMs, bool demoMode) {
   if (nowMs - lastFrameMs_ < kFramePeriodMs) return;
   lastFrameMs_ = nowMs;
 
-  const AnimationFrame animation = scheduler_.update(nowMs, expression_);
+  float transitionProgress = 1.0f;
+  float transitionBlink = 0.0f;
+  if (transitioning_) {
+    transitionProgress = (nowMs - transitionStartMs_) /
+                         static_cast<float>(kTransitionDurationMs);
+    if (transitionProgress >= 1.0f) {
+      transitionProgress = 1.0f;
+      transitioning_ = false;
+      renderExpression_ = expression_;
+    } else {
+      if (transitionProgress >= 0.5f) renderExpression_ = expression_;
+      transitionBlink = 1.0f - fabsf(transitionProgress * 2.0f - 1.0f);
+    }
+  }
+
+  const AnimationFrame animation = scheduler_.update(nowMs, renderExpression_);
   float gazeX = constrain(tiltX_ + animation.idleGazeX, -1.0f, 1.0f);
   float gazeY = constrain(tiltY_ + animation.idleGazeY, -1.0f, 1.0f);
-  const uint16_t background = backgroundFor(expression_);
+  const uint16_t background = transitioning_
+                                  ? blend565(backgroundFor(fromExpression_),
+                                             backgroundFor(expression_), transitionProgress)
+                                  : backgroundFor(renderExpression_);
+  const float blink = max(animation.blink, transitionBlink);
 
   canvas_.fillScreen(background);
-  eyes_.draw(canvas_, expression_, gazeX, gazeY, animation.blink, background);
-  mouth_.draw(canvas_, expression_, animation.mouthPhase);
-  drawDecorations(expression_, background, nowMs);
+  eyes_.draw(canvas_, renderExpression_, gazeX, gazeY, blink, background);
+  mouth_.draw(canvas_, renderExpression_, animation.mouthPhase);
+  drawDecorations(renderExpression_, background, nowMs);
 
   canvas_.setTextDatum(middle_center);
   canvas_.setTextSize(1);
   canvas_.setTextColor(0xC618, background);
-  canvas_.drawString(expressionName(expression_), 160, 221);
+  canvas_.drawString(expressionName(renderExpression_), 160, 221);
   canvas_.setTextDatum(top_left);
   canvas_.setTextColor(0x7BEF, background);
-  canvas_.drawString(demoMode ? "AUTO  C:pause  A/B:step" : "MANUAL  C:auto  A/B:step", 6, 228);
+  canvas_.drawString(demoMode ? "AUTO A/B:step C:pause holdC:mute"
+                              : "MANUAL A/B:step C:auto holdC:mute",
+                     6, 228);
   canvas_.pushSprite(0, 0);
   reportFrameRate(nowMs);
 }
 
 }  // namespace firechan
-

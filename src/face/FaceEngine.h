@@ -28,12 +28,15 @@ class FaceEngine {
   MouthRenderer mouth_;
   AnimationScheduler scheduler_;
   Expression expression_ = Expression::Neutral;
+  Expression renderExpression_ = Expression::Neutral;
+  Expression fromExpression_ = Expression::Neutral;
   float tiltX_ = 0.0f;
   float tiltY_ = 0.0f;
+  uint32_t transitionStartMs_ = 0;
+  bool transitioning_ = false;
   uint32_t lastFrameMs_ = 0;
   uint32_t fpsWindowMs_ = 0;
   uint32_t frameCount_ = 0;
 };
 
 }  // namespace firechan
-

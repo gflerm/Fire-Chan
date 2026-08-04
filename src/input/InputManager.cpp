@@ -9,6 +9,7 @@ const char* inputEventName(InputEvent event) {
     case InputEvent::PreviousExpression: return "button-a/previous";
     case InputEvent::NextExpression: return "button-b/next";
     case InputEvent::ToggleDemo: return "button-c/toggle-demo";
+    case InputEvent::ToggleSound: return "button-c-long/toggle-sound";
     case InputEvent::ResetNeutral: return "button-b-long/neutral";
     case InputEvent::Shake: return "shake";
     case InputEvent::PickedUp: return "picked-up";
@@ -24,7 +25,10 @@ void InputManager::begin() { gestures_.begin(millis()); }
 
 InputState InputManager::update(uint32_t nowMs) {
   InputState state;
-  if (M5.BtnB.wasHold()) {
+  if (M5.BtnC.wasHold()) {
+    state.event = InputEvent::ToggleSound;
+    gestures_.noteInteraction(nowMs);
+  } else if (M5.BtnB.wasHold()) {
     state.event = InputEvent::ResetNeutral;
     gestures_.noteInteraction(nowMs);
   } else if (M5.BtnA.wasClicked()) {
@@ -64,4 +68,3 @@ InputState InputManager::update(uint32_t nowMs) {
 }
 
 }  // namespace firechan
-
