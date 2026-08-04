@@ -1434,12 +1434,12 @@ Exit criteria:
 ### Repository
 
 - [ ] Create Git repository
-- [ ] Add license
-- [ ] Add README
-- [ ] Add this design specification
-- [ ] Add `DECISIONS.md`
-- [ ] Add `.gitignore`
-- [ ] Add versioning scheme
+- [x] Add license — Apache-2.0
+- [x] Add README
+- [x] Add this design specification
+- [x] Add `DECISIONS.md`
+- [x] Add `.gitignore`
+- [x] Add versioning scheme
 
 ### Toolchain
 
@@ -1547,8 +1547,7 @@ Initial questions:
 12. AI service or local command-only mode
 13. Whether an external RTC is required
 14. Whether reminders must work through complete power loss
-15. Preferred open-source license
-16. Final project name and repository name
+15. Final project name and repository name
 
 ---
 

@@ -135,6 +135,7 @@ Acceptance criteria:
 
 ## Release gate for the next milestone
 
+- [x] Apache 2.0 project licensing and principal third-party notices are published.
 - [ ] Device-friendly provisioning passes first-use and recovery tests.
 - [ ] Five-turn contextual conversation passes without breaking deterministic commands.
 - [ ] Voice cancellation and interruption are predictable.

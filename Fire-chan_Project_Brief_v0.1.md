@@ -421,7 +421,6 @@ Recommended first coding session:
 - OTA method
 - Long-term STT, TTS, and conversation model upgrade policy
 - Need for an external RTC
-- Open-source license
 - Final repository name
 
 ---

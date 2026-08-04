@@ -1,5 +1,7 @@
 # Fire-chan
 
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 Fire-chan is a stationary, Stack-chan-inspired desktop companion built for the
 M5Stack Fire v2.5. The project combines an expressive animated face, buttons,
 IMU gestures, RGB lighting, local audio, and a privacy-friendly voice assistant
@@ -58,3 +60,11 @@ be committed.
 
 The next milestone focuses on device-friendly Wi-Fi provisioning, multi-turn
 conversation, voice interruption, and extended stability testing.
+
+## License
+
+Fire-chan's original code and documentation are licensed under the
+[Apache License 2.0](LICENSE), copyright 2026 gflerm. Third-party libraries,
+tools, models, and voice assets retain their own licenses; see
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) before redistributing source,
+firmware binaries, models, or prepared Raspberry Pi images.

@@ -131,3 +131,25 @@ privacy controls are complete.
 - CPU, memory, feedback, and accidental-activation risks stay bounded.
 - Any future wake word must include an obvious listening indicator and a physical or
   persistent software disable control.
+
+## ADR-007: License original Fire-chan work under Apache 2.0
+
+### Status
+
+Accepted — 2026-08-04
+
+### Decision
+
+License Fire-chan's original source code and documentation under the Apache License,
+Version 2.0, with `gflerm` as the copyright holder. Include the canonical `LICENSE`,
+an attribution `NOTICE`, and a third-party inventory at the repository root.
+
+### Consequences
+
+- Users may use, modify, and redistribute Fire-chan, including commercially, under
+  Apache 2.0's conditions and explicit patent grant.
+- Contributions submitted for inclusion are licensed under Apache 2.0 unless stated
+  otherwise through a separate agreement.
+- Third-party libraries, tools, models, and voice assets retain their own licenses.
+- Distributors must review those terms, particularly LGPL-licensed firmware
+  dependencies, GPL-licensed Piper, and separately licensed language models.

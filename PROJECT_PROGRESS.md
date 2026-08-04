@@ -58,6 +58,7 @@ Phases 0–3 and the local voice-assistant round trip are substantially complete
 - [x] Added a modular parser for gateway expression and action hints.
 - [x] Added deferred sleep, wake, mute, and unmute behavior so acknowledgements finish first.
 - [x] Updated all project Markdown documents and established `TODO.md` as the active backlog.
+- [x] Published the project under Apache License 2.0 with NOTICE and third-party licensing information.
 
 ## Voice input milestone
 
