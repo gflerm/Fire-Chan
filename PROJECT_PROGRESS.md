@@ -7,7 +7,7 @@
 
 ## Current milestone
 
-Phase 0 (repository and toolchain) is complete. Phase 1 (hardware diagnostics) is substantially complete with PSRAM investigation and manual checks outstanding. Phase 2 (face engine) is implemented and approved on hardware. Expression-driven personality feedback is now running as firmware version `0.3.0-personality`.
+Phase 0 (repository and toolchain) is complete. Phase 1 (hardware diagnostics) is substantially complete with PSRAM investigation and manual checks outstanding. Phase 2 (face engine) is implemented and approved on hardware. The event-driven application foundation is now running as firmware version `0.4.0-events`.
 
 ## Completed
 
@@ -31,6 +31,12 @@ Phase 0 (repository and toolchain) is complete. Phase 1 (hardware diagnostics) i
 - [x] Added animated expression-specific lighting for all ten RGB LEDs.
 - [x] Added long-C sound mute/unmute control.
 - [x] Built, uploaded, and exercised firmware version `0.3.0-personality`.
+- [x] Added a fixed-capacity event bus without dynamic allocation.
+- [x] Routed buttons, IMU gestures, inactivity, and the demo scheduler through typed events.
+- [x] Added a central behavior engine with specification-aligned state priority.
+- [x] Added behavior inputs for future alarm, error, listening, speaking, and network states.
+- [x] Removed direct input-to-face coupling from the application orchestrator.
+- [x] Built, uploaded, and exercised firmware version `0.4.0-events`.
 
 ## Face milestone
 
@@ -79,6 +85,25 @@ Personality feedback test results:
 | Long-C mute | PASS; physical button event captured and mute state changed |
 | Remaining buttons/gestures | Manual confirmation still required |
 
+Event and behavior test results:
+
+| Item | Result |
+|---|---|
+| Event queue | PASS; fixed capacity of 16 events |
+| Automatic demo routing | PASS; each change dispatched as an event |
+| Behavior resolution | PASS; every demo event resolved to the expected expression |
+| Queue drain | PASS; pending count returned to zero after each dispatch |
+| Dropped events | None observed |
+| Priority order | Error > alarm > face-down > speaking > listening > temporary reaction > offline > base state |
+| Event-driven frame rate | 27.8 FPS |
+| Event-driven free heap | approximately 236.6 KB and stable |
+
+Event implementation modules:
+
+- `src/app/AppEvent.*`
+- `src/app/EventBus.*`
+- `src/app/BehaviorEngine.*`
+
 Test controls:
 
 | Input | Test action |
@@ -119,9 +144,9 @@ Face implementation modules:
 | Arduino ESP32 framework | 3.20017.241212 |
 | M5Unified | 0.2.19 |
 | Adafruit NeoPixel | 1.15.5 |
-| Firmware | `0.3.0-personality` |
-| Static RAM use | 26,016 bytes (0.6%) |
-| Flash use | 524,181 bytes (8.0%) |
+| Firmware | `0.4.0-events` |
+| Static RAM use | 26,160 bytes (0.6%) |
+| Flash use | 525,809 bytes (8.0%) |
 | Build | PASS |
 | Upload | PASS |
 
