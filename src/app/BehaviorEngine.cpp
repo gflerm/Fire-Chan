@@ -70,6 +70,10 @@ BehaviorAction BehaviorEngine::handle(const AppEvent& event) {
   BehaviorAction action;
   action.demoMode = demoMode_;
   switch (event.type) {
+    case AppEventType::VoiceCaptureRequested:
+      // A real interaction takes precedence over the expression showcase.
+      setDemoMode(false, event.timestampMs, action);
+      break;
     case AppEventType::VoiceRecordingReady:
       listening_ = false;
       setTemporaryExpression(Expression::Thinking, event.timestampMs, 1800);

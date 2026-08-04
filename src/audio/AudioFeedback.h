@@ -15,6 +15,7 @@ class AudioFeedback {
   void suspend();
   void resume();
   bool muted() const { return muted_; }
+  uint8_t speechVolume() const { return speechVolume_; }
 
  private:
   struct ToneStep {
@@ -33,6 +34,7 @@ class AudioFeedback {
   bool muted_ = false;
   bool suspended_ = false;
   uint8_t hardwareVolume_ = 0;
+  uint8_t speechVolume_ = 0;
 };
 
 }  // namespace firechan

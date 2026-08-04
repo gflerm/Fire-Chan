@@ -268,13 +268,12 @@ Battery percentage is available, but battery voltage is currently reported as 0 
 
 ## Next development steps
 
-1. Install and verify the prepared Ember gateway on the Raspberry Pi 5 SSD.
-2. Add a non-blocking Wi-Fi connection service, reconnect state machine, and captive provisioning.
-3. Upload the captured WAV to the Pi with the shared token stored in NVS.
-4. Download and play Ember's response while driving the Speaking face and mouth animation.
-5. Apply local action and expression hints returned by the gateway.
-6. Complete Phase 4 with microSD sound-pack playback and reusable alarm audio.
-7. Continue the separate PSRAM hardware/configuration investigation without blocking feature work.
+1. Apply local action and expression hints returned by the gateway.
+2. Add captive Wi-Fi provisioning and move the compiled local credentials into NVS.
+3. Tune Ember's voice volume, pace, and personality after listening tests.
+4. Complete Phase 4 with microSD sound-pack playback and reusable alarm audio.
+5. Run longer multi-turn stability, reconnection, and audio-interruption tests.
+6. Continue the separate PSRAM hardware/configuration investigation without blocking feature work.
 
 ## Raspberry Pi voice gateway
 
@@ -290,8 +289,7 @@ Prepared on 2026-08-04 for a Raspberry Pi 5 with 8 GB RAM and an SSD:
 The versioned `gateway/` package includes the application, local command router,
 personality prompt, automatic installer, and system services. The gateway uses one
 LAN-facing authenticated endpoint; model services remain bound to localhost. Unit
-tests for command routing pass. Deployment and end-to-end timing tests remain pending
-until the Pi's SSH address and username are available.
+tests for command routing pass. Deployment and live end-to-end tests on the Pi 5 SSD pass.
 
 ### Fire-to-Pi connection
 
@@ -304,8 +302,27 @@ The firmware builds successfully with no warnings. Live hardware verification pa
 2026-08-04: the Fire joined Wi-Fi as `192.168.8.124` at -44 dBm, uploaded a 3.891-second
 124,528-byte recording, and stayed responsive at roughly 25–27 FPS during processing.
 The Pi transcribed "What is your name?" exactly and returned "I'm Ember. It's lovely to
-meet you." The response-ready expression was applied successfully. Downloaded response
-audio and synchronized Speaking animation are the next increment.
+meet you." The response-ready expression was applied successfully.
+
+Firmware `0.8.0-ember-voice` completes the spoken round trip without PSRAM. It accepts
+fixed-length or connection-close HTTP audio, atomically caches each reply on microSD,
+validates the WAV structure, and streams 16-bit PCM through two alternating 1,536-byte
+internal-RAM buffers. Two live responses (113,196 and 62,508 bytes, 22.05 kHz mono)
+played to completion while the Speaking expression was active. The face returned to
+roughly 27 FPS and free heap recovered after each reply. Audible clarity and preferred
+volume remain a user-listening check.
+
+Initial listening feedback described the reply as soft and distorted. The player was
+updated to three rotating buffers (the M5Unified safe runtime-audio pattern), restores an
+explicit speech volume of 104 after speaker restart, and reports source peak level. Two
+further responses completed with stable memory and a source peak of 32,767. Subjective
+clarity after this adjustment remains to be confirmed; the peak result also gives a basis
+for adding attenuation or Pi-side audio conditioning if needed.
+
+The saved expression demo had also been competing with assistant states. Beginning a real
+voice capture now turns demo mode off and persists the change. Live testing confirmed the
+face remains stable between prompts and uses Listening, Thinking, and Speaking only for
+the corresponding interaction stages.
 
 ## Useful commands
 

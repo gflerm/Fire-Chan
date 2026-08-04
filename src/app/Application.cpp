@@ -24,7 +24,7 @@ AppEventType Application::mapInputEvent(InputEvent event) const {
 
 void Application::handleCommandEvent(const AppEvent& event) {
   if (event.type == AppEventType::VoiceCaptureRequested && !voice_.recording() &&
-      !voiceGateway_.busy()) {
+      !voiceGateway_.busy() && !responsePlayer_.busy()) {
     audio_.suspend();
     if (voice_.start(event.timestampMs)) {
       events_.publish(AppEventType::ListeningStarted, event.timestampMs);
@@ -72,6 +72,7 @@ void Application::begin() {
   voice_.begin(configManager_.sdAvailable(), config_.maxRecordingSeconds);
   network_.begin(millis());
   voiceGateway_.begin();
+  responsePlayer_.begin();
   input_.begin(config_);
   faceReady_ = face_.begin(config_.displayBrightnessPercent);
   rgb_.begin(config_.rgbBrightnessPercent);
@@ -108,8 +109,28 @@ void Application::update() {
   const VoiceGatewayEvent gatewayEvent = voiceGateway_.update();
   if (gatewayEvent == VoiceGatewayEvent::ResponseReady) {
     events_.publish(AppEventType::AssistantResponseReady, now);
+    if (!audio_.muted()) {
+      audio_.suspend();
+      if (responsePlayer_.play(voiceGateway_.audioPath(), audio_.speechVolume())) {
+        events_.publish(AppEventType::SpeakingStarted, now);
+      } else {
+        audio_.resume();
+        events_.publish(AppEventType::AssistantRequestFailed, now);
+      }
+    }
   } else if (gatewayEvent == VoiceGatewayEvent::RequestFailed) {
     Serial.printf("[ASSISTANT] request failed: %s\n", voiceGateway_.error());
+    events_.publish(AppEventType::AssistantRequestFailed, now);
+  }
+
+  const ResponseAudioEvent playbackEvent = responsePlayer_.update();
+  if (playbackEvent == ResponseAudioEvent::PlaybackFinished) {
+    audio_.resume();
+    events_.publish(AppEventType::SpeakingStopped, now);
+  } else if (playbackEvent == ResponseAudioEvent::PlaybackFailed) {
+    audio_.resume();
+    Serial.printf("[PLAYBACK] failed: %s\n", responsePlayer_.error());
+    events_.publish(AppEventType::SpeakingStopped, now);
     events_.publish(AppEventType::AssistantRequestFailed, now);
   }
   behavior_.tick(now, events_);

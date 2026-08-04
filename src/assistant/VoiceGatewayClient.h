@@ -24,6 +24,7 @@ class VoiceGatewayClient {
   const char* expression() const { return expression_; }
   const char* action() const { return action_; }
   const char* error() const { return error_; }
+  const char* audioPath() const { return "/cache/ember_response.wav"; }
 
  private:
   enum class State : uint8_t { Idle, Pending, Working, Ready, Failed };
@@ -31,6 +32,7 @@ class VoiceGatewayClient {
   static void taskEntry(void* context);
   void taskLoop();
   bool performRequest();
+  bool downloadAudio(const char* audioUrl);
   void setError(const char* message);
 
   static constexpr size_t kPathCapacity = 64;

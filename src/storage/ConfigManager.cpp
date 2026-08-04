@@ -31,7 +31,7 @@ bool ConfigManager::loadNvs(AppConfig& config) {
   config.sleepingAfterSeconds = preferences.getUShort("sleeping", 60);
   config.maxRecordingSeconds = preferences.getUChar("maxvoice", 12);
   config.muted = preferences.getBool("muted", false);
-  config.demoMode = preferences.getBool("demo", true);
+  config.demoMode = preferences.getBool("demo", false);
   preferences.end();
   config.validate();
   return true;

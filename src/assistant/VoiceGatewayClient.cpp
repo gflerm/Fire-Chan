@@ -12,6 +12,10 @@ namespace {
 constexpr char kBoundary[] = "----FireChanVoiceBoundary";
 constexpr char kVoicePath[] = "/v1/voice";
 constexpr uint32_t kRequestTimeoutMs = 180000;
+constexpr uint32_t kDownloadTimeoutMs = 60000;
+constexpr size_t kMaximumAudioBytes = 4 * 1024 * 1024;
+constexpr char kResponseAudioPath[] = "/cache/ember_response.wav";
+constexpr char kTemporaryAudioPath[] = "/cache/ember_response.tmp";
 }
 
 void VoiceGatewayClient::begin() {
@@ -74,6 +78,109 @@ void VoiceGatewayClient::setError(const char* message) {
   Serial.printf("[ASSISTANT] ERROR: %s\n", error_);
 }
 
+bool VoiceGatewayClient::downloadAudio(const char* audioUrl) {
+  if (audioUrl == nullptr || strncmp(audioUrl, "/v1/audio/", 10) != 0) {
+    setError("gateway audio URL was invalid");
+    return false;
+  }
+  if (!SD.exists("/cache") && !SD.mkdir("/cache")) {
+    setError("audio cache directory failed");
+    return false;
+  }
+  if (SD.exists(kTemporaryAudioPath) && !SD.remove(kTemporaryAudioPath)) {
+    setError("old audio cache could not be cleared");
+    return false;
+  }
+
+  WiFiClient transport;
+  HttpClient request(transport, secrets::kEmberHost, secrets::kEmberPort);
+  request.setHttpResponseTimeout(kDownloadTimeoutMs);
+  request.beginRequest();
+  request.get(audioUrl);
+  request.sendHeader("X-Ember-Token", secrets::kEmberToken);
+  request.endRequest();
+
+  const int status = request.responseStatusCode();
+  const long contentLength = request.contentLength();
+  const bool chunked = request.isResponseChunked();
+  const bool streamed = chunked || contentLength <= 0;
+  Serial.printf("[ASSISTANT] audio response status=%d length=%ld chunked=%s\n",
+                status, contentLength, chunked ? "true" : "false");
+  if (status != 200 || (!streamed && (contentLength < 44 ||
+      contentLength > static_cast<long>(kMaximumAudioBytes)))) {
+    request.stop();
+    setError(status == 200 ? "response audio size was invalid" : "response audio download failed");
+    return false;
+  }
+
+  File output = SD.open(kTemporaryAudioPath, FILE_WRITE);
+  if (!output) {
+    request.stop();
+    setError("response audio cache could not be opened");
+    return false;
+  }
+
+  uint8_t buffer[1024];
+  size_t received = 0;
+  uint32_t lastDataMs = millis();
+  while (streamed || received < static_cast<size_t>(contentLength)) {
+    const int available = request.available();
+    if (available > 0) {
+      size_t wanted = min(sizeof(buffer), static_cast<size_t>(available));
+      if (!streamed) {
+        wanted = min(wanted, static_cast<size_t>(contentLength) - received);
+      }
+      int count = 0;
+      if (chunked) {
+        // ArduinoHttpClient only updates its chunk decoder on single-byte reads.
+        while (count < static_cast<int>(wanted)) {
+          const int value = request.read();
+          if (value < 0) break;
+          buffer[count++] = static_cast<uint8_t>(value);
+        }
+      } else {
+        count = request.read(buffer, wanted);
+      }
+      if (count <= 0 || received + count > kMaximumAudioBytes ||
+          output.write(buffer, count) != static_cast<size_t>(count)) {
+        output.close();
+        request.stop();
+        SD.remove(kTemporaryAudioPath);
+        setError("response audio write failed");
+        return false;
+      }
+      received += count;
+      lastDataMs = millis();
+    } else {
+      if (!request.connected() || millis() - lastDataMs > kDownloadTimeoutMs) break;
+      vTaskDelay(pdMS_TO_TICKS(2));
+    }
+  }
+  output.flush();
+  const bool writeOk = output.getWriteError() == 0;
+  output.close();
+  request.stop();
+  if (!writeOk || received < 44 ||
+      (!streamed && received != static_cast<size_t>(contentLength))) {
+    SD.remove(kTemporaryAudioPath);
+    setError("response audio was incomplete");
+    return false;
+  }
+  if (SD.exists(kResponseAudioPath) && !SD.remove(kResponseAudioPath)) {
+    SD.remove(kTemporaryAudioPath);
+    setError("previous response audio could not be replaced");
+    return false;
+  }
+  if (!SD.rename(kTemporaryAudioPath, kResponseAudioPath)) {
+    SD.remove(kTemporaryAudioPath);
+    setError("response audio rename failed");
+    return false;
+  }
+  Serial.printf("[ASSISTANT] audio=%s bytes=%u\n", kResponseAudioPath,
+                static_cast<unsigned>(received));
+  return true;
+}
+
 bool VoiceGatewayClient::performRequest() {
   File recording = SD.open(recordingPath_, FILE_READ);
   if (!recording) {
@@ -132,10 +239,12 @@ bool VoiceGatewayClient::performRequest() {
   strlcpy(reply_, document["reply"] | "", sizeof(reply_));
   strlcpy(expression_, document["expression"] | "happy", sizeof(expression_));
   strlcpy(action_, document["action"] | "", sizeof(action_));
+  const char* audioUrl = document["audio_url"] | "";
   if (transcript_[0] == '\0' || reply_[0] == '\0') {
     setError("gateway response was incomplete");
     return false;
   }
+  if (!downloadAudio(audioUrl)) return false;
   Serial.printf("[ASSISTANT] heard: %s\n", transcript_);
   Serial.printf("[ASSISTANT] Ember: %s\n", reply_);
   Serial.printf("[ASSISTANT] expression=%s action=%s\n", expression_,

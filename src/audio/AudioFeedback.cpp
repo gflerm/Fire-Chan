@@ -9,10 +9,12 @@ void AudioFeedback::begin(uint8_t volumePercent, bool muted) {
   M5.Speaker.begin();
   // Cap expression cues below the speaker's full hardware range.
   hardwareVolume_ = static_cast<uint8_t>(volumePercent * 96U / 100U);
+  // Speech needs more headroom than the deliberately quiet expression cues.
+  speechVolume_ = static_cast<uint8_t>(volumePercent * 160U / 100U);
   M5.Speaker.setVolume(hardwareVolume_);
   muted_ = muted;
-  Serial.printf("[AUDIO] non-blocking cues ready volume=%u%% muted=%s\n",
-                volumePercent, muted_ ? "true" : "false");
+  Serial.printf("[AUDIO] non-blocking cues ready volume=%u%% speech_level=%u muted=%s\n",
+                volumePercent, speechVolume_, muted_ ? "true" : "false");
 }
 
 void AudioFeedback::clear() {

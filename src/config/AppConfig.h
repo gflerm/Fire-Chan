@@ -15,7 +15,7 @@ struct AppConfig {
   uint16_t sleepingAfterSeconds = 60;
   uint8_t maxRecordingSeconds = 12;
   bool muted = false;
-  bool demoMode = true;
+  bool demoMode = false;
 
   void validate() {
     displayBrightnessPercent = constrain(displayBrightnessPercent, 10, 100);

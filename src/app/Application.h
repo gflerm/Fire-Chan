@@ -5,6 +5,7 @@
 #include "face/FaceEngine.h"
 #include "input/InputManager.h"
 #include "audio/AudioFeedback.h"
+#include "audio/ResponseAudioPlayer.h"
 #include "hardware/RgbFeedback.h"
 #include "app/BehaviorEngine.h"
 #include "app/EventBus.h"
@@ -37,6 +38,7 @@ class Application {
   VoiceRecorder voice_;
   NetworkManager network_;
   VoiceGatewayClient voiceGateway_;
+  ResponseAudioPlayer responsePlayer_;
   bool faceReady_ = false;
 };
 
