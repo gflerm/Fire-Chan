@@ -10,6 +10,8 @@ enum class AppEventType : uint8_t {
   VoiceCaptureStopRequested,
   VoiceRecordingReady,
   VoiceRecordingFailed,
+  AssistantResponseReady,
+  AssistantRequestFailed,
   PreviousExpression,
   NextExpression,
   ToggleDemo,

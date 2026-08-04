@@ -293,6 +293,18 @@ LAN-facing authenticated endpoint; model services remain bound to localhost. Uni
 tests for command routing pass. Deployment and end-to-end timing tests remain pending
 until the Pi's SSH address and username are available.
 
+### Fire-to-Pi connection
+
+Firmware `0.7.0-pi-gateway` adds a modular Wi-Fi manager and an assistant client for
+the gateway at `192.168.8.107:8088`. Long HTTP requests and SD reads run in a dedicated
+FreeRTOS task so the face loop stays responsive. Credentials live only in the ignored
+`include/secrets.h`; `include/secrets.example.h` documents the required values.
+
+The firmware builds successfully with no warnings. Hardware verification is pending
+until the local Wi-Fi name, password, and generated Ember token are entered. This first
+handshake prints the transcript and Ember reply over serial. Downloaded response audio
+and synchronized Speaking animation are the next increment after upload verification.
+
 ## Useful commands
 
 ```powershell

@@ -8,6 +8,8 @@ const char* appEventName(AppEventType type) {
     case AppEventType::VoiceCaptureStopRequested: return "voice-capture-stop-requested";
     case AppEventType::VoiceRecordingReady: return "voice-recording-ready";
     case AppEventType::VoiceRecordingFailed: return "voice-recording-failed";
+    case AppEventType::AssistantResponseReady: return "assistant-response-ready";
+    case AppEventType::AssistantRequestFailed: return "assistant-request-failed";
     case AppEventType::PreviousExpression: return "previous-expression";
     case AppEventType::NextExpression: return "next-expression";
     case AppEventType::ToggleDemo: return "toggle-demo";

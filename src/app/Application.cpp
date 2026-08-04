@@ -23,7 +23,8 @@ AppEventType Application::mapInputEvent(InputEvent event) const {
 }
 
 void Application::handleCommandEvent(const AppEvent& event) {
-  if (event.type == AppEventType::VoiceCaptureRequested && !voice_.recording()) {
+  if (event.type == AppEventType::VoiceCaptureRequested && !voice_.recording() &&
+      !voiceGateway_.busy()) {
     audio_.suspend();
     if (voice_.start(event.timestampMs)) {
       events_.publish(AppEventType::ListeningStarted, event.timestampMs);
@@ -69,6 +70,8 @@ void Application::begin() {
 
   configManager_.begin(config_);
   voice_.begin(configManager_.sdAvailable(), config_.maxRecordingSeconds);
+  network_.begin(millis());
+  voiceGateway_.begin();
   input_.begin(config_);
   faceReady_ = face_.begin(config_.displayBrightnessPercent);
   rgb_.begin(config_.rgbBrightnessPercent);
@@ -82,6 +85,7 @@ void Application::begin() {
 
 void Application::update() {
   const uint32_t now = millis();
+  network_.update(now, events_);
   const InputState input = input_.update(now);
   face_.setTilt(input.tiltX, input.tiltY);
 
@@ -92,9 +96,21 @@ void Application::update() {
   if (voiceEvent == VoiceRecorderEvent::RecordingReady) {
     audio_.resume();
     events_.publish(AppEventType::VoiceRecordingReady, now);
+    if (!network_.connected() || !voiceGateway_.submit(voice_.recordingPath())) {
+      Serial.println("[ASSISTANT] prompt not submitted; gateway unavailable");
+      events_.publish(AppEventType::AssistantRequestFailed, now);
+    }
   } else if (voiceEvent == VoiceRecorderEvent::RecordingFailed) {
     audio_.resume();
     events_.publish(AppEventType::VoiceRecordingFailed, now);
+  }
+
+  const VoiceGatewayEvent gatewayEvent = voiceGateway_.update();
+  if (gatewayEvent == VoiceGatewayEvent::ResponseReady) {
+    events_.publish(AppEventType::AssistantResponseReady, now);
+  } else if (gatewayEvent == VoiceGatewayEvent::RequestFailed) {
+    Serial.printf("[ASSISTANT] request failed: %s\n", voiceGateway_.error());
+    events_.publish(AppEventType::AssistantRequestFailed, now);
   }
   behavior_.tick(now, events_);
 

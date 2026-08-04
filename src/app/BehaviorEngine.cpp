@@ -78,6 +78,12 @@ BehaviorAction BehaviorEngine::handle(const AppEvent& event) {
       listening_ = false;
       setTemporaryExpression(Expression::Error, event.timestampMs, 2500);
       break;
+    case AppEventType::AssistantResponseReady:
+      setTemporaryExpression(Expression::Happy, event.timestampMs, 2200);
+      break;
+    case AppEventType::AssistantRequestFailed:
+      setTemporaryExpression(Expression::Error, event.timestampMs, 3000);
+      break;
     case AppEventType::PreviousExpression:
       setDemoMode(false, event.timestampMs, action);
       setBaseExpression(previousExpression(activeExpression_));

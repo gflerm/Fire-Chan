@@ -11,6 +11,8 @@
 #include "config/AppConfig.h"
 #include "storage/ConfigManager.h"
 #include "voice/VoiceRecorder.h"
+#include "network/NetworkManager.h"
+#include "assistant/VoiceGatewayClient.h"
 
 namespace firechan {
 
@@ -33,6 +35,8 @@ class Application {
   AppConfig config_;
   ConfigManager configManager_;
   VoiceRecorder voice_;
+  NetworkManager network_;
+  VoiceGatewayClient voiceGateway_;
   bool faceReady_ = false;
 };
 
