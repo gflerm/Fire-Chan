@@ -25,6 +25,14 @@ The installer creates a dedicated unprivileged `ember` account, installs the sta
 `/opt/ember`, stores generated audio under `/var/lib/ember`, and registers four services.
 It prints the gateway address and a randomly generated shared token at the end.
 
+For later gateway-only updates, copy the refreshed directory to the Pi and run:
+
+```bash
+cd gateway
+chmod +x scripts/update-pi.sh
+sudo ./scripts/update-pi.sh
+```
+
 ## Verify
 
 ```bash
@@ -52,3 +60,7 @@ sudo journalctl -u ember-gateway -f
 Configuration is in `/etc/ember/ember.env`. The gateway only exposes port `8088`; the model
 services listen on the Pi itself. Response WAV files older than one hour are automatically
 removed.
+
+Time questions are answered directly from the Pi clock using `EMBER_TIMEZONE` rather than
+being sent to the language model. The default is `Africa/Johannesburg`; verify the Pi clock
+with `timedatectl` after installation.

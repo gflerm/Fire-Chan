@@ -10,6 +10,7 @@ class Settings:
     port: int
     audio_dir: Path
     max_upload_bytes: int
+    timezone: str
     whisper_url: str
     ollama_url: str
     ollama_model: str
@@ -34,6 +35,7 @@ class Settings:
             port=int(os.getenv("EMBER_PORT", "8088")),
             audio_dir=Path(os.getenv("EMBER_AUDIO_DIR", "/var/lib/ember/audio")),
             max_upload_bytes=int(os.getenv("EMBER_MAX_UPLOAD_MB", "12")) * 1024 * 1024,
+            timezone=os.getenv("EMBER_TIMEZONE", "Africa/Johannesburg"),
             whisper_url=os.getenv("WHISPER_URL", "http://127.0.0.1:8080").rstrip("/"),
             ollama_url=os.getenv("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/"),
             ollama_model=os.getenv("OLLAMA_MODEL", "llama3.2:3b"),

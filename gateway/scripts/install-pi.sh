@@ -66,6 +66,9 @@ if [[ ! -f "${CONFIG_DIR}/ember.env" ]]; then
   chmod 640 "${CONFIG_DIR}/ember.env"
   chown root:ember "${CONFIG_DIR}/ember.env"
 fi
+if ! grep -q '^EMBER_TIMEZONE=' "${CONFIG_DIR}/ember.env"; then
+  echo 'EMBER_TIMEZONE=Africa/Johannesburg' >> "${CONFIG_DIR}/ember.env"
+fi
 
 install -m 0644 "${SOURCE_DIR}/systemd/whisper-ember.service" /etc/systemd/system/
 install -m 0644 "${SOURCE_DIR}/systemd/piper-ember.service" /etc/systemd/system/

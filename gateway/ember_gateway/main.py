@@ -9,13 +9,14 @@ from fastapi.responses import FileResponse
 from .commands import choose_expression, match_local_command
 from .config import Settings
 from .services import LocalVoiceServices
+from . import __version__
 
 settings = Settings.from_environment()
 settings.audio_dir.mkdir(parents=True, exist_ok=True)
 services = LocalVoiceServices(
     settings.whisper_url, settings.ollama_url, settings.ollama_model, settings.piper_url
 )
-app = FastAPI(title="Ember Local Voice Gateway", version="0.1.0")
+app = FastAPI(title="Ember Local Voice Gateway", version=__version__)
 
 
 def authorize(x_ember_token: str = Header(default="")) -> None:
@@ -63,7 +64,7 @@ async def voice(file: UploadFile = File(...), _: None = Depends(authorize)) -> d
     if not transcript:
         raise HTTPException(status_code=422, detail="No speech was detected")
 
-    command = match_local_command(transcript)
+    command = match_local_command(transcript, settings.timezone)
     if command:
         reply, expression, action = command.reply, command.expression, command.action
     else:

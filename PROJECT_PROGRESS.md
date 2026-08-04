@@ -324,6 +324,13 @@ voice capture now turns demo mode off and persists the change. Live testing conf
 face remains stable between prompts and uses Listening, Thinking, and Speaking only for
 the corresponding interaction stages.
 
+Firmware `0.8.1-voice-tuning` raises the dedicated speech output by 10% (level 104 to
+114 at the current 65% user setting) without changing expression-cue volume. Gateway
+`0.2.0` handles time questions deterministically from `Africa/Johannesburg` instead of
+allowing the language model to guess. The Pi was independently verified at 18:47 SAST,
+with NTP active and the clock synchronized; the earlier 15:47 answer was therefore a
+model hallucination, not a Pi clock fault. Five gateway command tests pass.
+
 ## Useful commands
 
 ```powershell
