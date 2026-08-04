@@ -21,7 +21,10 @@ const char* inputEventName(InputEvent event) {
   }
 }
 
-void InputManager::begin() { gestures_.begin(millis()); }
+void InputManager::begin(const AppConfig& config) {
+  gestures_.begin(millis(), config.gestureSensitivityPercent,
+                  config.sleepyAfterSeconds, config.sleepingAfterSeconds);
+}
 
 InputState InputManager::update(uint32_t nowMs) {
   InputState state;

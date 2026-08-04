@@ -18,7 +18,7 @@ struct BehaviorAction {
 
 class BehaviorEngine {
  public:
-  void begin(uint32_t nowMs);
+  void begin(uint32_t nowMs, bool demoMode);
   void tick(uint32_t nowMs, EventBus& events);
   BehaviorAction handle(const AppEvent& event);
 
@@ -49,4 +49,3 @@ class BehaviorEngine {
 };
 
 }  // namespace firechan
-

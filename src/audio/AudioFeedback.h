@@ -8,7 +8,7 @@ namespace firechan {
 
 class AudioFeedback {
  public:
-  void begin();
+  void begin(uint8_t volumePercent, bool muted);
   void playExpression(Expression expression);
   void update(uint32_t nowMs);
   void toggleMute();
@@ -32,4 +32,3 @@ class AudioFeedback {
 };
 
 }  // namespace firechan
-

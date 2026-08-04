@@ -3,6 +3,7 @@
 #include <Arduino.h>
 
 #include "input/GestureDetector.h"
+#include "config/AppConfig.h"
 
 namespace firechan {
 
@@ -29,7 +30,7 @@ struct InputState {
 
 class InputManager {
  public:
-  void begin();
+  void begin(const AppConfig& config);
   InputState update(uint32_t nowMs);
 
  private:

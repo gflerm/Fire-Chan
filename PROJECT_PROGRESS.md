@@ -7,7 +7,7 @@
 
 ## Current milestone
 
-Phase 0 (repository and toolchain) is complete. Phase 1 (hardware diagnostics) is substantially complete with PSRAM investigation and manual checks outstanding. Phase 2 (face engine) is implemented and approved on hardware. The event-driven application foundation is now running as firmware version `0.4.0-events`.
+Phases 0–3 are substantially complete: the repository/toolchain, hardware baseline, face engine, modular inputs, event bus, and behavior engine all run on the physical device. Phase 4 local audio has non-blocking expression cues, volume, and persistent mute; SD sound packs and alarm playback remain. The storage/configuration foundation is running as firmware version `0.5.0-config`. Phase 5 networking is next.
 
 ## Completed
 
@@ -37,6 +37,33 @@ Phase 0 (repository and toolchain) is complete. Phase 1 (hardware diagnostics) i
 - [x] Added behavior inputs for future alarm, error, listening, speaking, and network states.
 - [x] Removed direct input-to-face coupling from the application orchestrator.
 - [x] Built, uploaded, and exercised firmware version `0.4.0-events`.
+- [x] Added an architecture decision log covering PlatformIO, optional PSRAM, and storage responsibilities.
+- [x] Added validated configuration defaults for display, audio, RGB, gestures, inactivity, and demo mode.
+- [x] Added NVS persistence for essential preferences with deferred, non-blocking writes.
+- [x] Added a human-readable `/config/device.json` backup on microSD.
+- [x] Added safe fallback behavior when NVS or microSD is unavailable.
+- [x] Applied configuration to the face, audio, RGB, gesture, inactivity, and behavior modules.
+- [x] Built, uploaded, and exercised firmware version `0.5.0-config`.
+
+## Storage and configuration milestone
+
+| Item | Result |
+|---|---|
+| NVS settings load | PASS |
+| Safe compiled defaults | Implemented and validated before use |
+| microSD mount | PASS |
+| `/config/device.json` backup | PASS |
+| Missing-card handling | Implemented; local features continue without SD |
+| Deferred preference writes | Implemented with a 1.5-second debounce |
+| Configured subsystems | Display, sound, RGB, gestures, inactivity, demo mode |
+| Runtime frame rate | 27.7–27.8 FPS |
+| Runtime free heap | approximately 207 KB and stable |
+| PSRAM dependency | None |
+
+Persistent button-controlled preferences:
+
+- Hold Button C: mute/unmute sound
+- Button C: automatic/manual showcase mode
 
 ## Face milestone
 
@@ -144,9 +171,9 @@ Face implementation modules:
 | Arduino ESP32 framework | 3.20017.241212 |
 | M5Unified | 0.2.19 |
 | Adafruit NeoPixel | 1.15.5 |
-| Firmware | `0.4.0-events` |
-| Static RAM use | 26,160 bytes (0.6%) |
-| Flash use | 525,809 bytes (8.0%) |
+| Firmware | `0.5.0-config` |
+| Static RAM use | 26,372 bytes (0.6%) |
+| Flash use | 577,709 bytes (8.8%) |
 | Build | PASS |
 | Upload | PASS |
 
@@ -215,11 +242,12 @@ Battery percentage is available, but battery voltage is currently reported as 0 
 
 ## Next development steps
 
-1. Resolve or formally document the PSRAM limitation.
-2. Complete the remaining manual diagnostic confirmations.
-3. Record the exact IMU and power-controller models.
-4. Split the diagnostic firmware into hardware abstraction and diagnostic modules.
-5. Add the first non-blocking animated face and button-driven expressions.
+1. Complete Phase 4 with microSD sound-pack playback and reusable alarm audio.
+2. Start Phase 5 with a non-blocking Wi-Fi connection service and reconnect state machine.
+3. Add captive provisioning without embedding credentials in the repository.
+4. Expose device status and configuration through a small local web interface and HTTP API.
+5. Keep local face, gestures, and audio fully operational during network loss.
+6. Continue the separate PSRAM hardware/configuration investigation without blocking feature work.
 
 ## Useful commands
 

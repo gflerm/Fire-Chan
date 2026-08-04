@@ -5,7 +5,8 @@ namespace {
 constexpr uint32_t kDemoPeriodMs = 3200;
 }
 
-void BehaviorEngine::begin(uint32_t nowMs) {
+void BehaviorEngine::begin(uint32_t nowMs, bool demoMode) {
+  demoMode_ = demoMode;
   nextDemoMs_ = nowMs + kDemoPeriodMs;
   activeExpression_ = resolveExpression();
   Serial.println("[BEHAVIOR] priority engine ready");
@@ -134,4 +135,3 @@ BehaviorAction BehaviorEngine::handle(const AppEvent& event) {
 }
 
 }  // namespace firechan
-

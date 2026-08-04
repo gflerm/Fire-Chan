@@ -16,7 +16,14 @@ const char* gestureName(GestureEvent event) {
   }
 }
 
-void GestureDetector::begin(uint32_t nowMs) { lastMotionMs_ = nowMs; }
+void GestureDetector::begin(uint32_t nowMs, uint8_t sensitivityPercent,
+                            uint16_t sleepyAfterSeconds,
+                            uint16_t sleepingAfterSeconds) {
+  lastMotionMs_ = nowMs;
+  thresholdScale_ = 100.0f / sensitivityPercent;
+  sleepyAfterMs_ = sleepyAfterSeconds * 1000UL;
+  sleepingAfterMs_ = sleepingAfterSeconds * 1000UL;
+}
 
 void GestureDetector::noteInteraction(uint32_t nowMs) {
   lastMotionMs_ = nowMs;
@@ -46,7 +53,8 @@ GestureReading GestureDetector::update(uint32_t nowMs, float ax, float ay, float
   previousAy_ = ay;
   previousAz_ = az;
 
-  if (jerk > 0.12f || fabsf(magnitude - 1.0f) > 0.12f) noteInteraction(nowMs);
+  if (jerk > 0.12f * thresholdScale_ ||
+      fabsf(magnitude - 1.0f) > 0.12f * thresholdScale_) noteInteraction(nowMs);
 
   if (filteredAz_ < -0.72f) {
     if (faceDownSinceMs_ == 0) faceDownSinceMs_ = nowMs;
@@ -64,11 +72,12 @@ GestureReading GestureDetector::update(uint32_t nowMs, float ax, float ay, float
   }
 
   if (result.event == GestureEvent::None && static_cast<int32_t>(nowMs - cooldownUntilMs_) >= 0) {
-    if (jerk > 1.35f || magnitude > 2.2f) {
+    if (jerk > 1.35f * thresholdScale_ || magnitude > 2.2f) {
       result.event = GestureEvent::Shake;
       cooldownUntilMs_ = nowMs + 1600;
       noteInteraction(nowMs);
-    } else if (jerk > 0.38f && magnitude > 0.55f && magnitude < 1.65f) {
+    } else if (jerk > 0.38f * thresholdScale_ && magnitude > 0.55f &&
+               magnitude < 1.65f) {
       result.event = GestureEvent::PickedUp;
       cooldownUntilMs_ = nowMs + 1600;
       noteInteraction(nowMs);
@@ -77,10 +86,10 @@ GestureReading GestureDetector::update(uint32_t nowMs, float ax, float ay, float
 
   const uint32_t idleMs = nowMs - lastMotionMs_;
   if (!faceDown_ && result.event == GestureEvent::None) {
-    if (!sleepingSent_ && idleMs > 60000) {
+    if (!sleepingSent_ && idleMs > sleepingAfterMs_) {
       sleepingSent_ = true;
       result.event = GestureEvent::DeepSleepy;
-    } else if (!sleepySent_ && idleMs > 30000) {
+    } else if (!sleepySent_ && idleMs > sleepyAfterMs_) {
       sleepySent_ = true;
       result.event = GestureEvent::Inactive;
     }
@@ -89,4 +98,3 @@ GestureReading GestureDetector::update(uint32_t nowMs, float ax, float ay, float
 }
 
 }  // namespace firechan
-

@@ -22,8 +22,15 @@ AppEventType Application::mapInputEvent(InputEvent event) const {
 }
 
 void Application::applyAction(const BehaviorAction& action) {
-  if (action.toggleSound) audio_.toggleMute();
+  const uint32_t now = millis();
+  if (action.toggleSound) {
+    audio_.toggleMute();
+    config_.muted = audio_.muted();
+    configManager_.markDirty(now);
+  }
   if (action.demoModeChanged) {
+    config_.demoMode = action.demoMode;
+    configManager_.markDirty(now);
     Serial.printf("[BEHAVIOR] demo=%s\n", action.demoMode ? "on" : "off");
   }
   if (action.expressionChanged) {
@@ -44,12 +51,13 @@ void Application::begin() {
   Serial.println(" Tilt=gaze, pickup=surprised, shake=confused, face-down=sleep");
   Serial.println("========================================");
 
-  input_.begin();
-  faceReady_ = face_.begin();
-  rgb_.begin();
-  audio_.begin();
+  configManager_.begin(config_);
+  input_.begin(config_);
+  faceReady_ = face_.begin(config_.displayBrightnessPercent);
+  rgb_.begin(config_.rgbBrightnessPercent);
+  audio_.begin(config_.volumePercent, config_.muted);
   const uint32_t now = millis();
-  behavior_.begin(now);
+  behavior_.begin(now, config_.demoMode);
   rgb_.setExpression(behavior_.expression());
   audio_.playExpression(behavior_.expression());
   Serial.println("[EVENT] fixed queue capacity=16 ready");
@@ -74,6 +82,7 @@ void Application::update() {
   if (faceReady_) face_.update(now, behavior_.demoMode());
   rgb_.update(now);
   audio_.update(now);
+  configManager_.update(now, config_);
 }
 
 }  // namespace firechan

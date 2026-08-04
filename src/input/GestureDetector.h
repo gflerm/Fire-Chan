@@ -22,7 +22,8 @@ struct GestureReading {
 
 class GestureDetector {
  public:
-  void begin(uint32_t nowMs);
+  void begin(uint32_t nowMs, uint8_t sensitivityPercent,
+             uint16_t sleepyAfterSeconds, uint16_t sleepingAfterSeconds);
   GestureReading update(uint32_t nowMs, float ax, float ay, float az);
   void noteInteraction(uint32_t nowMs);
 
@@ -40,9 +41,11 @@ class GestureDetector {
   bool sleepySent_ = false;
   bool sleepingSent_ = false;
   bool initialized_ = false;
+  float thresholdScale_ = 1.0f;
+  uint32_t sleepyAfterMs_ = 30000;
+  uint32_t sleepingAfterMs_ = 60000;
 };
 
 const char* gestureName(GestureEvent event);
 
 }  // namespace firechan
-

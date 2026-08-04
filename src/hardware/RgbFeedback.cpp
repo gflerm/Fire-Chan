@@ -11,9 +11,9 @@ constexpr uint8_t kRgbCount = 10;
 RgbFeedback::RgbFeedback()
     : pixels_(kRgbCount, kRgbPin, NEO_GRB + NEO_KHZ800) {}
 
-void RgbFeedback::begin() {
+void RgbFeedback::begin(uint8_t brightnessPercent) {
   pixels_.begin();
-  pixels_.setBrightness(42);
+  pixels_.setBrightness(static_cast<uint8_t>(brightnessPercent * 255U / 100U));
   pixels_.clear();
   pixels_.show();
   Serial.println("[RGB] expression lighting ready");
@@ -66,4 +66,3 @@ void RgbFeedback::update(uint32_t nowMs) {
 }
 
 }  // namespace firechan
-

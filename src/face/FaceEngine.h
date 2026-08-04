@@ -12,7 +12,7 @@ namespace firechan {
 class FaceEngine {
  public:
   FaceEngine();
-  bool begin();
+  bool begin(uint8_t brightnessPercent);
   void setExpression(Expression expression);
   void setTilt(float x, float y);
   void update(uint32_t nowMs, bool demoMode);

@@ -22,9 +22,9 @@ uint16_t blend565(uint16_t from, uint16_t to, float amount) {
 
 FaceEngine::FaceEngine() : canvas_(&M5.Display) {}
 
-bool FaceEngine::begin() {
+bool FaceEngine::begin(uint8_t brightnessPercent) {
   M5.Display.setRotation(1);
-  M5.Display.setBrightness(128);
+  M5.Display.setBrightness(static_cast<uint8_t>(brightnessPercent * 255U / 100U));
   canvas_.setColorDepth(8);
   canvas_.setPsram(false);
   if (canvas_.createSprite(M5.Display.width(), M5.Display.height()) == nullptr) {

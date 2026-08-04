@@ -8,6 +8,8 @@
 #include "hardware/RgbFeedback.h"
 #include "app/BehaviorEngine.h"
 #include "app/EventBus.h"
+#include "config/AppConfig.h"
+#include "storage/ConfigManager.h"
 
 namespace firechan {
 
@@ -26,6 +28,8 @@ class Application {
   RgbFeedback rgb_;
   EventBus events_;
   BehaviorEngine behavior_;
+  AppConfig config_;
+  ConfigManager configManager_;
   bool faceReady_ = false;
 };
 

@@ -10,7 +10,7 @@ namespace firechan {
 class RgbFeedback {
  public:
   RgbFeedback();
-  void begin();
+  void begin(uint8_t brightnessPercent);
   void setExpression(Expression expression);
   void update(uint32_t nowMs);
 
@@ -23,4 +23,3 @@ class RgbFeedback {
 };
 
 }  // namespace firechan
-
