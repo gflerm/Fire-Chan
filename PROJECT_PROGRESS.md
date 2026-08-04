@@ -300,10 +300,12 @@ the gateway at `192.168.8.107:8088`. Long HTTP requests and SD reads run in a de
 FreeRTOS task so the face loop stays responsive. Credentials live only in the ignored
 `include/secrets.h`; `include/secrets.example.h` documents the required values.
 
-The firmware builds successfully with no warnings. Hardware verification is pending
-until the local Wi-Fi name, password, and generated Ember token are entered. This first
-handshake prints the transcript and Ember reply over serial. Downloaded response audio
-and synchronized Speaking animation are the next increment after upload verification.
+The firmware builds successfully with no warnings. Live hardware verification passed on
+2026-08-04: the Fire joined Wi-Fi as `192.168.8.124` at -44 dBm, uploaded a 3.891-second
+124,528-byte recording, and stayed responsive at roughly 25–27 FPS during processing.
+The Pi transcribed "What is your name?" exactly and returned "I'm Ember. It's lovely to
+meet you." The response-ready expression was applied successfully. Downloaded response
+audio and synchronized Speaking animation are the next increment.
 
 ## Useful commands
 
