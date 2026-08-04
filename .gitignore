@@ -5,3 +5,5 @@
 __pycache__/
 *.py[cod]
 include/secrets.h
+.obsidian/
+CLOUD_AI_PROVIDER_PRICING.md
