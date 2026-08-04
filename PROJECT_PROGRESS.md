@@ -57,6 +57,7 @@ Phases 0–3 and the local voice-assistant round trip are substantially complete
 - [x] Accepted dedicated speech output level 141 after physical listening tests.
 - [x] Added a modular parser for gateway expression and action hints.
 - [x] Added deferred sleep, wake, mute, and unmute behavior so acknowledgements finish first.
+- [x] Updated all project Markdown documents and established `TODO.md` as the active backlog.
 
 ## Voice input milestone
 
@@ -272,6 +273,8 @@ Battery percentage is available, but battery voltage is currently reported as 0 
 - [ ] Run a longer stability and memory-leak test.
 
 ## Next development steps
+
+The prioritized and testable backlog now lives in `TODO.md`. Immediate work remains:
 
 1. Physically verify the new emotional hints and sleep, wake, mute, and unmute voice commands.
 2. Add captive Wi-Fi provisioning and move the compiled local credentials into NVS.

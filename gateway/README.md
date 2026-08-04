@@ -8,6 +8,14 @@ This gateway keeps Ember's speech and conversation processing on the local netwo
 4. Piper with the `en_GB-alba-medium` voice turns the reply into a WAV file.
 5. The gateway returns the transcript, reply, expression/action hints, and audio URL.
 
+## Current deployed baseline
+
+The stack is running on a Raspberry Pi 5 with 8 GB RAM and SSD at `192.168.8.107:8088`.
+Fire firmware `0.9.0-assistant-directives` records a 16 kHz mono prompt, uploads it in a
+background task, downloads the response WAV to microSD, streams it with three bounded
+internal-RAM buffers, and applies the returned expression or supported device action.
+The accepted Fire speech output level is 141. Neither side requires a cloud account.
+
 The Pi 5 should run 64-bit Raspberry Pi OS from its SSD and have network access during
 installation. A wired Ethernet connection is recommended for the initial model downloads.
 
@@ -40,9 +48,9 @@ TOKEN="paste-the-generated-token"
 curl -H "X-Ember-Token: ${TOKEN}" http://127.0.0.1:8088/health
 ```
 
-Do not commit the generated token. The Fire will eventually store the Pi address and token
-in its existing persistent configuration. Until that firmware link is added, a computer on
-the same LAN can test a recorded prompt with:
+Do not commit the generated token. The current Fire firmware reads Wi-Fi and gateway
+credentials from the ignored `include/secrets.h`; the planned provisioning work will move
+them into NVS. A computer on the same LAN can test a recorded prompt with:
 
 ```bash
 curl -H "X-Ember-Token: ${TOKEN}" \
@@ -64,3 +72,18 @@ removed.
 Time questions are answered directly from the Pi clock using `EMBER_TIMEZONE` rather than
 being sent to the language model. The default is `Africa/Johannesburg`; verify the Pi clock
 with `timedatectl` after installation.
+
+## Supported local commands
+
+| Prompt intent | Device result |
+|---|---|
+| Ask the time | Deterministic local time from `Africa/Johannesburg` |
+| Ask Ember's name | Local identity response |
+| Go to sleep | Spoken acknowledgement, then Sleeping state |
+| Wake up | Audio restored if needed, then awake expression |
+| Mute | Spoken acknowledgement, then persistent mute |
+| Unmute | Persistent unmute before spoken acknowledgement |
+| Status | Local online-status response |
+
+Multi-turn memory, timers, reminders, provisioning, and assistant interruption behavior
+are tracked in the root `TODO.md`.

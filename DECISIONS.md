@@ -84,3 +84,50 @@ keep the model services accessible only from localhost.
   streaming buffers and does not require PSRAM for the voice pipeline.
 - Response latency must be measured on the real Pi before model sizes are finalized.
 - The shared gateway token must be provisioned into the Fire's NVS, never source control.
+
+## ADR-005: Apply assistant directives after spoken acknowledgement
+
+### Status
+
+Accepted — 2026-08-04
+
+### Context
+
+The Ember gateway returns both an emotional expression and an optional device action.
+Applying mute before playback would silence Ember's own acknowledgement, while applying
+an expression during playback would be hidden by the higher-priority Speaking state.
+
+### Decision
+
+Parse gateway hints in a dedicated assistant module. Apply emotional expressions and
+device actions after response playback completes. Unmute is the sole early action so
+its confirmation can be heard. Treat time and status as informational actions with no
+device-state side effect.
+
+### Consequences
+
+- Spoken confirmations and face transitions occur in a predictable order.
+- Sleep changes the persistent resting expression; wake restores Neutral and may add a
+  temporary emotional reaction.
+- Explicit mute/unmute operations are idempotent and persist through the existing
+  configuration manager.
+- Unknown hints fail safely without changing device state.
+
+## ADR-006: Use push-to-talk before considering wake-word listening
+
+### Status
+
+Accepted — 2026-08-04
+
+### Decision
+
+Keep Button A push-to-talk as the default voice interaction. Evaluate wake-word support
+only after Wi-Fi provisioning, multi-turn reliability, interruption handling, and clear
+privacy controls are complete.
+
+### Consequences
+
+- Recording is intentional and visibly indicated by the Listening expression.
+- CPU, memory, feedback, and accidental-activation risks stay bounded.
+- Any future wake word must include an obvious listening indicator and a physical or
+  persistent software disable control.

@@ -5,6 +5,15 @@
 **Purpose:** Stationary Stack-chan-inspired desktop companion  
 **Excluded:** Camera and servo movement
 
+**Implementation status (2026-08-04):** The hardware baseline, animated face,
+event-driven behavior, persistent configuration, push-to-talk recording, and a fully
+local Ember voice round trip are operational on the physical Fire v2.5. Firmware
+`0.9.0-assistant-directives` uses a Raspberry Pi 5 for local STT, conversation, and
+TTS, and applies returned expression, sleep, wake, mute, and unmute hints. The known
+PSRAM fault is non-blocking because core features use bounded internal-RAM buffers.
+The active backlog is maintained in `TODO.md`; detailed evidence is in
+`PROJECT_PROGRESS.md`.
+
 ---
 
 ## 1. Project Goal
@@ -48,13 +57,13 @@ The device should remain useful even without internet access.
 - OTA firmware updates
 - Offline operation for core functions
 
-### Planned
+### Planned or in progress
 
-- Push-to-talk microphone recording
-- Online speech-to-text
-- Local command routing
-- Text-to-speech
-- Optional AI conversation
+- Push-to-talk microphone recording — implemented
+- Local speech-to-text on Raspberry Pi — implemented
+- Local command routing — partially implemented
+- Text-to-speech — implemented with Ember's local Piper voice
+- Local AI conversation — implemented; multi-turn memory remains
 - MQTT and Home Assistant integration
 - Personality profiles
 - Custom avatar and sound packs
@@ -404,17 +413,13 @@ Recommended first coding session:
 
 ## 14. Open Decisions
 
-- Exact PlatformIO board setup
-- Confirmed Fire v2.5 pin mappings
-- Actual IMU and audio hardware
+- Device-friendly Wi-Fi provisioning flow
 - Web server library
 - MQTT library
 - Audio playback library
 - Configuration format and location
 - OTA method
-- Speech-to-text provider
-- Text-to-speech provider
-- AI service
+- Long-term STT, TTS, and conversation model upgrade policy
 - Need for an external RTC
 - Open-source license
 - Final repository name

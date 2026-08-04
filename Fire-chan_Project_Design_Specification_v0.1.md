@@ -6,6 +6,15 @@
 **Project type:** Stationary, open-source desktop companion  
 **Date:** 2026-08-04
 
+> **Living-document update — 2026-08-04:** The first hardware milestone and the
+> local voice-assistant path have been implemented on the physical target. Current
+> firmware is `0.9.0-assistant-directives`; Ember runs fully locally through a
+> Raspberry Pi 5 using whisper.cpp, Ollama, and Piper. Push-to-talk, streamed reply
+> playback, expression hints, and sleep/wake/mute/unmute actions work without PSRAM.
+> PSRAM remains a separate hardware finding rather than a core requirement. See
+> `PROJECT_PROGRESS.md`, `DECISIONS.md`, and `TODO.md` for verified results and the
+> active implementation backlog.
+
 ---
 
 ## 1. Executive Summary
