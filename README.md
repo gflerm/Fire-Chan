@@ -39,8 +39,8 @@ The project uses PlatformIO with the Arduino framework:
 
 ```powershell
 pio run
-pio run --target upload --upload-port COM5
-pio device monitor --port COM5 --baud 115200
+pio run --target upload --upload-port COMXX
+pio device monitor --port COMXX --baud 115200
 ```
 
 Copy `include/secrets.example.h` to `include/secrets.h` and enter local network
