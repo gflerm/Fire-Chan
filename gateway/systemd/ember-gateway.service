@@ -1,0 +1,19 @@
+[Unit]
+Description=Ember local voice gateway
+After=network-online.target ollama.service whisper-ember.service piper-ember.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ember
+Group=ember
+EnvironmentFile=/etc/ember/ember.env
+WorkingDirectory=/opt/ember/gateway
+ExecStart=/opt/ember/venv/bin/uvicorn ember_gateway.main:app --host 0.0.0.0 --port 8088
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

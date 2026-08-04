@@ -268,13 +268,30 @@ Battery percentage is available, but battery voltage is currently reported as 0 
 
 ## Next development steps
 
-1. Add a non-blocking Wi-Fi connection service, reconnect state machine, and captive provisioning.
-2. Submit the captured WAV to a speech-to-text service without storing credentials in source control.
-3. Route recognized text through local commands before an optional conversational AI service.
-4. Add streamed text-to-speech playback with the Speaking face and mouth animation.
-5. Complete Phase 4 with microSD sound-pack playback and reusable alarm audio.
-6. Keep local face, gestures, and audio operational during network or cloud failure.
+1. Install and verify the prepared Ember gateway on the Raspberry Pi 5 SSD.
+2. Add a non-blocking Wi-Fi connection service, reconnect state machine, and captive provisioning.
+3. Upload the captured WAV to the Pi with the shared token stored in NVS.
+4. Download and play Ember's response while driving the Speaking face and mouth animation.
+5. Apply local action and expression hints returned by the gateway.
+6. Complete Phase 4 with microSD sound-pack playback and reusable alarm audio.
 7. Continue the separate PSRAM hardware/configuration investigation without blocking feature work.
+
+## Raspberry Pi voice gateway
+
+Prepared on 2026-08-04 for a Raspberry Pi 5 with 8 GB RAM and an SSD:
+
+| Component | Selection | Purpose |
+|---|---|---|
+| Speech recognition | whisper.cpp `base.en` | Local English speech-to-text |
+| Conversation | Ollama `llama3.2:3b` | Local short-form replies |
+| Voice | Piper `en_GB-alba-medium` | Ember's warm British English voice |
+| Orchestration | Ember FastAPI gateway | Authentication, commands, model routing, and response audio |
+
+The versioned `gateway/` package includes the application, local command router,
+personality prompt, automatic installer, and system services. The gateway uses one
+LAN-facing authenticated endpoint; model services remain bound to localhost. Unit
+tests for command routing pass. Deployment and end-to-end timing tests remain pending
+until the Pi's SSH address and username are available.
 
 ## Useful commands
 

@@ -1,0 +1,16 @@
+[Unit]
+Description=Ember whisper.cpp speech recognition
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ember
+Group=ember
+ExecStart=/opt/ember/whisper.cpp/build/bin/whisper-server -m /opt/ember/models/whisper/ggml-base.en.bin --host 127.0.0.1 --port 8080 -t 4
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
