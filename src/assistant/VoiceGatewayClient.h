@@ -40,6 +40,7 @@ class VoiceGatewayClient {
   static constexpr size_t kReplyCapacity = 768;
   static constexpr size_t kHintCapacity = 24;
   static constexpr size_t kErrorCapacity = 96;
+  static constexpr size_t kDownloadBufferSize = 4096;
 
   TaskHandle_t task_ = nullptr;
   volatile State state_ = State::Idle;
@@ -49,6 +50,7 @@ class VoiceGatewayClient {
   char expression_[kHintCapacity] = {};
   char action_[kHintCapacity] = {};
   char error_[kErrorCapacity] = {};
+  uint8_t downloadBuffer_[kDownloadBufferSize] = {};
 };
 
 }  // namespace firechan

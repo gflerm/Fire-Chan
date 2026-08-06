@@ -3,11 +3,11 @@
 **Target:** M5Stack Fire v2.5  
 **Working directory:** `D:\projects\Fire-Chan`  
 **Diagnostic serial port:** `COM5` at 115200 baud  
-**Last updated:** 2026-08-04
+**Last updated:** 2026-08-06
 
 ## Current milestone
 
-Phases 0–3 and the local voice-assistant round trip are substantially complete. Fire-chan records prompts, sends them to the Raspberry Pi Ember gateway, plays the local reply, and keeps the face responsive without PSRAM. Firmware `0.9.0-assistant-directives` adds gateway-driven emotional reactions and the sleep, wake, mute, and unmute device actions. SD sound packs, alarm playback, Wi-Fi provisioning, and longer stability testing remain.
+Phases 0–3 and the voice-assistant round trip are substantially complete. Fire-chan records prompts, sends them to the Raspberry Pi Ember gateway, plays the reply, and keeps the face responsive without PSRAM. Firmware `0.9.3-audio-download` retains the persistent Thinking-state correction and adds latency diagnostics plus bounded audio-download batching. The gateway now uses optional Gemini conversation with automatic Ollama fallback. Gemini is quick, but end-to-end latency remains subjectively slow and is the next optimization target. SD sound packs, alarm playback, Wi-Fi provisioning, and longer stability testing remain.
 
 ## Completed
 
@@ -59,6 +59,17 @@ Phases 0–3 and the local voice-assistant round trip are substantially complete
 - [x] Added deferred sleep, wake, mute, and unmute behavior so acknowledgements finish first.
 - [x] Updated all project Markdown documents and established `TODO.md` as the active backlog.
 - [x] Published the project under Apache License 2.0 with NOTICE and third-party licensing information.
+- [x] Added modular Ollama and Gemini conversation providers to the Pi gateway.
+- [x] Kept deterministic local commands, whisper.cpp STT, and Piper TTS outside Gemini.
+- [x] Added automatic Ollama fallback and per-stage gateway timing diagnostics.
+- [x] Added hidden-input Gemini key provisioning with no key stored in Git.
+- [x] Deployed Gemini on the Pi with Ollama retained as automatic fallback.
+- [x] Replaced the 1.8-second Thinking timer with an explicit request-in-progress state.
+- [x] Built and uploaded firmware `0.9.1-thinking-state` to the physical Fire.
+- [x] Added provider and per-stage latency diagnostics to the Fire serial output.
+- [x] Measured two live Gemini turns and identified audio download as the largest delay.
+- [x] Corrected an experimental download-buffer stack overflow by moving the fixed 4 KB
+  buffer into bounded internal RAM, then rebuilt and uploaded successfully.
 
 ## Voice input milestone
 
@@ -204,9 +215,9 @@ Face implementation modules:
 | Arduino ESP32 framework | 3.20017.241212 |
 | M5Unified | 0.2.19 |
 | Adafruit NeoPixel | 1.15.5 |
-| Firmware | `0.9.0-assistant-directives` |
-| Static RAM use | 72,272 bytes (1.6%) |
-| Flash use | 1,082,037 bytes (16.5%) |
+| Firmware | `0.9.3-audio-download` |
+| Static RAM use | 76,368 bytes (1.7%) |
+| Flash use | 1,083,097 bytes (16.5%) |
 | Build | PASS |
 | Upload | PASS |
 
@@ -277,12 +288,13 @@ Battery percentage is available, but battery voltage is currently reported as 0 
 
 The prioritized and testable backlog now lives in `TODO.md`. Immediate work remains:
 
-1. Physically verify the new emotional hints and sleep, wake, mute, and unmute voice commands.
-2. Add captive Wi-Fi provisioning and move the compiled local credentials into NVS.
-3. Refine Ember's pace and personality after additional listening tests; retain speech level 141 as the accepted volume baseline.
-4. Complete Phase 4 with microSD sound-pack playback and reusable alarm audio.
-5. Run longer multi-turn stability, reconnection, and audio-interruption tests.
-6. Continue the separate PSRAM hardware/configuration investigation without blocking feature work.
+1. Resume controlled latency testing and reduce Fire request/audio-download delay.
+2. Physically verify the remaining emotional hints and voice-directed device actions.
+3. Add captive Wi-Fi provisioning and move the compiled local credentials into NVS.
+4. Refine Ember's pace and personality while retaining speech level 141.
+5. Complete Phase 4 with microSD sound-pack playback and reusable alarm audio.
+6. Run longer multi-turn stability, reconnection, and audio-interruption tests.
+7. Continue the separate PSRAM investigation without blocking feature work.
 
 ## Raspberry Pi voice gateway
 
@@ -291,7 +303,8 @@ Prepared on 2026-08-04 for a Raspberry Pi 5 with 8 GB RAM and an SSD:
 | Component | Selection | Purpose |
 |---|---|---|
 | Speech recognition | whisper.cpp `base.en` | Local English speech-to-text |
-| Conversation | Ollama `llama3.2:3b` | Local short-form replies |
+| Conversation | Ollama `llama3.2:3b` | Default local short-form replies and cloud fallback |
+| Optional conversation | Gemini `gemini-3.5-flash-lite` | Low-latency cloud evaluation with minimal thinking |
 | Voice | Piper `en_GB-alba-medium` | Ember's warm British English voice |
 | Orchestration | Ember FastAPI gateway | Authentication, commands, model routing, and response audio |
 
@@ -299,6 +312,67 @@ The versioned `gateway/` package includes the application, local command router,
 personality prompt, automatic installer, and system services. The gateway uses one
 LAN-facing authenticated endpoint; model services remain bound to localhost. Unit
 tests for command routing pass. Deployment and live end-to-end tests on the Pi 5 SSD pass.
+
+### Optional Gemini evaluation — prepared 2026-08-06
+
+The conversation stage is now selected with `LLM_PROVIDER`. Ollama remains the default;
+selecting Gemini uses `gemini-3.5-flash-lite` with minimal thinking and a 120-token output
+limit. API, connectivity, empty-response, and quota-style HTTP failures automatically
+fall back to Ollama. Local commands are resolved before the provider, so time, identity,
+sleep, wake, mute, unmute, and status do not consume Gemini requests.
+
+The API key is entered through `gateway/scripts/configure-gemini.sh`, which hides terminal
+input and writes only to `/etc/ember/ember.env` with mode `0640`. It is not stored in the
+repository. Each voice response reports transcription, conversation, synthesis, and total
+gateway milliseconds to support a measured ten-prompt Gemini/Ollama comparison. Seven
+gateway unit tests pass locally. Pi deployment and real-key configuration are complete;
+an initial physical timing baseline has been captured.
+
+### Persistent Thinking-state correction — 2026-08-06
+
+The first Gemini trial felt faster, but the face changed from Thinking to Sleeping before
+the answer arrived and then woke for playback. The cause was firmware state handling, not
+Gemini: Thinking expired after a fixed 1.8 seconds and exposed the previously stored
+inactivity Sleeping state. Firmware `0.9.1-thinking-state` makes Thinking an explicit
+high-priority state from recording completion until gateway success or failure. Starting
+an accepted push-to-talk interaction also restores the resting face to Neutral. The fix
+built successfully with 72,272 bytes static RAM and 1,082,069 bytes flash, then uploaded
+successfully to COM5. Physical testing confirmed that Thinking now remains active until
+the response begins and Ember no longer enters Sleeping during the request.
+
+### Gemini latency baseline and paused optimization — 2026-08-06
+
+Firmware `0.9.2-latency-diagnostics` exposed both the provider selected for each turn and
+the timing returned by the gateway. Two successful live Gemini turns measured:
+
+| Stage | Turn 1 | Turn 2 |
+|---|---:|---:|
+| whisper.cpp transcription | 2,214 ms | 2,116 ms |
+| Gemini conversation | 923 ms | 1,761 ms |
+| Piper synthesis | 969 ms | 410 ms |
+| Pi gateway total | 4,106 ms | 4,287 ms |
+| Fire request through gateway JSON | 9,513 ms | 7,714 ms |
+| Response WAV download | 10,695 ms | 4,973 ms |
+| Fire response ready total | 20,208 ms | 12,687 ms |
+
+The measurements show that Gemini itself is not the dominant delay. Full response-audio
+download and Fire-side request/network overhead are larger than model inference. Reply
+length also directly affects the 22.05 kHz, 16-bit WAV size: the measured responses were
+331,308 and 134,700 bytes.
+
+An initial 4 KB batching experiment put the buffer on the gateway task stack and triggered
+the ESP32 stack-overflow guard on each request. The device rebooted cleanly and no project
+or credential data was lost. The buffer was immediately moved into fixed internal-RAM
+storage owned by `VoiceGatewayClient`, eliminating the task-stack allocation; the premature
+TCP no-delay call was also removed. Corrected firmware `0.9.3-audio-download` builds with
+76,368 bytes static RAM and 1,083,097 bytes flash and uploaded successfully. A follow-up
+prompt did not reset the device, but the capture did not retain a completed timing line,
+and the user still described the interaction as slow. Further optimization is deliberately
+paused until the next session.
+
+Resume with a controlled latency comparison, then prioritize: Fire request overhead,
+streaming or early-start playback, shorter spoken replies, and only then lower-rate or
+compressed response audio if voice quality remains acceptable.
 
 ### Fire-to-Pi connection
 

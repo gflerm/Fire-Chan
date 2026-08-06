@@ -2,7 +2,10 @@
 
 **Created:** 2026-08-04
 
-**Current firmware:** `0.9.0-assistant-directives`
+**Current firmware:** `0.9.3-audio-download`
+
+**Current gateway experiment:** Optional Gemini `gemini-3.5-flash-lite` conversation
+with minimal thinking and automatic Ollama fallback; live Pi benchmark pending.
 
 **Principle:** Preserve a responsive, private, useful companion even when the internet
 or optional PSRAM is unavailable.
@@ -55,6 +58,11 @@ Acceptance criteria:
 - [ ] Preserve Ember's name, warm tone, and current voice across sessions.
 - [ ] Ground time, date, device state, and other factual local commands in tools rather than guesses.
 - [ ] Measure turn latency for recording, STT, model response, TTS, download, and playback.
+- [ ] Compare at least ten identical prompts through Gemini and Ollama using gateway timings.
+- [ ] Re-measure the corrected 4 KB audio-download batching with a controlled short reply.
+- [ ] Reduce the 3–5 second Fire request overhead before changing STT or TTS models.
+- [ ] Evaluate playback from a growing/streamed WAV so speech can start before full download.
+- [ ] Evaluate 16 kHz response audio or a compact speech codec only if quality remains acceptable.
 
 Acceptance criteria:
 
@@ -129,7 +137,8 @@ Acceptance criteria:
 
 - [ ] MQTT and Home Assistant with an explicit allowlist of permitted actions.
 - [ ] External notifications with quiet hours, priority, acknowledge, and dismiss behavior.
-- [ ] Optional cloud STT, TTS, or language models as replaceable providers, never requirements.
+- [x] Add Gemini as a replaceable conversation provider without making cloud inference required.
+- [ ] Evaluate optional cloud STT or TTS only if local quality or latency becomes inadequate.
 - [ ] Optional companion phone or desktop setup interface.
 - [ ] Backup and restore of non-secret configuration.
 

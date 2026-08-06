@@ -9,13 +9,14 @@ named Ember—without a camera or servo movement.
 
 ## Current status
 
-Firmware `0.9.0-assistant-directives` is running on the physical device.
+Firmware `0.9.3-audio-download` is running on the physical device.
 
 - Animated face with 14 expressions, blinking, gaze, and speaking animation
 - Button and IMU interactions through a modular event-driven behavior engine
 - Persistent configuration in NVS with microSD backup
 - Push-to-talk 16 kHz voice recording
-- Fully local STT, conversation, and TTS on a Raspberry Pi 5
+- Local STT and TTS on a Raspberry Pi 5, with local Ollama conversation by default
+- Optional low-latency Gemini conversation with automatic Ollama fallback
 - Streamed response playback without requiring PSRAM
 - Ember-driven expressions and sleep, wake, mute, and unmute actions
 - Accepted speech output level of 141
@@ -24,16 +25,18 @@ The M5Stack's PSRAM currently fails its boot-time hardware test, but PSRAM is
 optional: the implemented face, voice, networking, and playback features use
 bounded internal-RAM buffers and remain operational.
 
-## Local voice stack
+## Voice stack
 
 The Raspberry Pi gateway keeps voice processing on the local network:
 
 - whisper.cpp `base.en` for speech recognition
-- Ollama `llama3.2:3b` for conversation
+- Ollama `llama3.2:3b` for private local conversation
+- Optional Gemini `gemini-3.5-flash-lite` for faster cloud conversation
 - Piper `en_GB-alba-medium` for Ember's voice
 - FastAPI gateway for authentication, local commands, and response audio
 
-No cloud AI account is required for the current voice path.
+No cloud AI account is required. Gemini is opt-in; only transcribed prompt text is sent
+to Google, while speech recognition and voice generation remain on the Pi.
 
 ## Build and upload
 

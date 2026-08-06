@@ -52,6 +52,7 @@ Expression BehaviorEngine::resolveExpression() const {
   if (faceDown_) return Expression::Sleeping;
   if (speaking_) return Expression::Speaking;
   if (listening_) return Expression::Listening;
+  if (thinking_) return Expression::Thinking;
   if (temporaryUntilMs_) return temporaryExpression_;
   if (offline_) return Expression::Offline;
   return baseExpression_;
@@ -76,16 +77,19 @@ BehaviorAction BehaviorEngine::handle(const AppEvent& event) {
       break;
     case AppEventType::VoiceRecordingReady:
       listening_ = false;
-      setTemporaryExpression(Expression::Thinking, event.timestampMs, 1800);
+      thinking_ = true;
       break;
     case AppEventType::VoiceRecordingFailed:
       listening_ = false;
+      thinking_ = false;
       setTemporaryExpression(Expression::Error, event.timestampMs, 2500);
       break;
     case AppEventType::AssistantResponseReady:
+      thinking_ = false;
       setTemporaryExpression(Expression::Happy, event.timestampMs, 2200);
       break;
     case AppEventType::AssistantRequestFailed:
+      thinking_ = false;
       setTemporaryExpression(Expression::Error, event.timestampMs, 3000);
       break;
     case AppEventType::PreviousExpression:
@@ -140,7 +144,12 @@ BehaviorAction BehaviorEngine::handle(const AppEvent& event) {
     case AppEventType::AlarmCleared: alarmActive_ = false; break;
     case AppEventType::ErrorRaised: errorActive_ = true; break;
     case AppEventType::ErrorCleared: errorActive_ = false; break;
-    case AppEventType::ListeningStarted: listening_ = true; break;
+    case AppEventType::ListeningStarted:
+      listening_ = true;
+      thinking_ = false;
+      // A deliberate push-to-talk interaction wakes an inactivity-sleeping face.
+      setBaseExpression(Expression::Neutral);
+      break;
     case AppEventType::ListeningStopped: listening_ = false; break;
     case AppEventType::SpeakingStarted: speaking_ = true; break;
     case AppEventType::SpeakingStopped: speaking_ = false; break;

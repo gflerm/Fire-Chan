@@ -153,3 +153,33 @@ an attribution `NOTICE`, and a third-party inventory at the repository root.
 - Third-party libraries, tools, models, and voice assets retain their own licenses.
 - Distributors must review those terms, particularly LGPL-licensed firmware
   dependencies, GPL-licensed Piper, and separately licensed language models.
+
+## ADR-008: Make Gemini an optional conversation provider
+
+### Status
+
+Accepted for live evaluation — 2026-08-06
+
+### Context
+
+The Pi-hosted Ollama model preserves privacy and offline operation but contributes a
+large part of Ember's turn latency. Google AI Studio provides a Gemini API key for a
+low-latency trial, while the existing local STT, commands, and TTS already work well.
+
+### Decision
+
+Keep whisper.cpp and Piper local. Add a modular Gemini conversation provider using
+`gemini-3.5-flash-lite`, minimal thinking, short output, and the existing Ember system
+prompt. Select the provider through `/etc/ember/ember.env`; never store the key in Git.
+Retain Ollama as the default and automatic fallback. Return stage timings for measured
+comparison rather than assuming the cloud path is faster.
+
+### Consequences
+
+- The Fire firmware and LAN gateway protocol remain unchanged.
+- Normal local commands such as time, name, mute, and sleep never call Gemini.
+- When Gemini is selected, transcript text leaves the local network; recorded audio does not.
+- Free-tier availability and quotas are external constraints, and free-tier prompts may
+  be used by Google to improve its products under the current service terms.
+- Loss of internet access, an API error, or a quota failure falls back to Ollama.
+- Ollama remains a complete offline path and a requirement for the initial evaluation.

@@ -47,6 +47,7 @@ class BehaviorEngine {
   bool alarmActive_ = false;
   bool errorActive_ = false;
   bool listening_ = false;
+  bool thinking_ = false;
   bool speaking_ = false;
   bool offline_ = false;
 };

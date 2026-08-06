@@ -120,13 +120,17 @@ bool VoiceGatewayClient::downloadAudio(const char* audioUrl) {
     return false;
   }
 
-  uint8_t buffer[1024];
+  // Batch network fragments into SD-friendly blocks. Writing every small TCP
+  // fragment directly to the card made response downloads the dominant delay.
+  size_t buffered = 0;
   size_t received = 0;
+  bool transferOk = true;
   uint32_t lastDataMs = millis();
   while (streamed || received < static_cast<size_t>(contentLength)) {
     const int available = request.available();
     if (available > 0) {
-      size_t wanted = min(sizeof(buffer), static_cast<size_t>(available));
+      const size_t freeSpace = kDownloadBufferSize - buffered;
+      size_t wanted = min(freeSpace, static_cast<size_t>(available));
       if (!streamed) {
         wanted = min(wanted, static_cast<size_t>(contentLength) - received);
       }
@@ -136,28 +140,36 @@ bool VoiceGatewayClient::downloadAudio(const char* audioUrl) {
         while (count < static_cast<int>(wanted)) {
           const int value = request.read();
           if (value < 0) break;
-          buffer[count++] = static_cast<uint8_t>(value);
+          downloadBuffer_[buffered + count++] = static_cast<uint8_t>(value);
         }
       } else {
-        count = request.read(buffer, wanted);
+        count = request.read(downloadBuffer_ + buffered, wanted);
       }
-      if (count <= 0 || received + count > kMaximumAudioBytes ||
-          output.write(buffer, count) != static_cast<size_t>(count)) {
-        output.close();
-        request.stop();
-        SD.remove(kTemporaryAudioPath);
-        setError("response audio write failed");
-        return false;
+      if (count <= 0 || received + count > kMaximumAudioBytes) {
+        transferOk = false;
+        break;
       }
+      buffered += static_cast<size_t>(count);
       received += count;
       lastDataMs = millis();
+      if (buffered == kDownloadBufferSize) {
+        if (output.write(downloadBuffer_, buffered) != buffered) {
+          transferOk = false;
+          break;
+        }
+        buffered = 0;
+      }
     } else {
       if (!request.connected() || millis() - lastDataMs > kDownloadTimeoutMs) break;
       vTaskDelay(pdMS_TO_TICKS(2));
     }
   }
+  if (transferOk && buffered > 0 &&
+      output.write(downloadBuffer_, buffered) != buffered) {
+    transferOk = false;
+  }
   output.flush();
-  const bool writeOk = output.getWriteError() == 0;
+  const bool writeOk = transferOk && output.getWriteError() == 0;
   output.close();
   request.stop();
   if (!writeOk || received < 44 ||
@@ -182,6 +194,7 @@ bool VoiceGatewayClient::downloadAudio(const char* audioUrl) {
 }
 
 bool VoiceGatewayClient::performRequest() {
+  const uint32_t turnStartedMs = millis();
   File recording = SD.open(recordingPath_, FILE_READ);
   if (!recording) {
     setError("recording could not be opened");
@@ -222,6 +235,7 @@ bool VoiceGatewayClient::performRequest() {
 
   const int status = request.responseStatusCode();
   const String body = request.responseBody();
+  const uint32_t gatewayResponseMs = millis();
   request.stop();
   if (status != 200) {
     snprintf(error_, sizeof(error_), "gateway HTTP %d", status);
@@ -240,15 +254,32 @@ bool VoiceGatewayClient::performRequest() {
   strlcpy(expression_, document["expression"] | "happy", sizeof(expression_));
   strlcpy(action_, document["action"] | "", sizeof(action_));
   const char* audioUrl = document["audio_url"] | "";
+  const char* provider = document["conversation_provider"] | "unknown";
+  const JsonObject timings = document["timings_ms"];
   if (transcript_[0] == '\0' || reply_[0] == '\0') {
     setError("gateway response was incomplete");
     return false;
   }
   if (!downloadAudio(audioUrl)) return false;
+  const uint32_t audioReadyMs = millis();
   Serial.printf("[ASSISTANT] heard: %s\n", transcript_);
   Serial.printf("[ASSISTANT] Ember: %s\n", reply_);
   Serial.printf("[ASSISTANT] expression=%s action=%s\n", expression_,
                 action_[0] ? action_ : "none");
+  Serial.printf(
+      "[LATENCY] provider=%s upload_validation=%lums transcription=%lums "
+      "conversation=%lums synthesis=%lums gateway_total=%lums\n",
+      provider,
+      static_cast<unsigned long>(timings["upload_validation"] | 0),
+      static_cast<unsigned long>(timings["transcription"] | 0),
+      static_cast<unsigned long>(timings["conversation"] | 0),
+      static_cast<unsigned long>(timings["synthesis"] | 0),
+      static_cast<unsigned long>(timings["gateway_total"] | 0));
+  Serial.printf(
+      "[LATENCY] fire_request=%lums audio_download=%lums ready_total=%lums\n",
+      static_cast<unsigned long>(gatewayResponseMs - turnStartedMs),
+      static_cast<unsigned long>(audioReadyMs - gatewayResponseMs),
+      static_cast<unsigned long>(audioReadyMs - turnStartedMs));
   return true;
 }
 
