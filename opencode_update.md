@@ -15,7 +15,7 @@ keep bounded per-device conversation history.
 - [x] `VoiceGatewayClient` now sends `X-Ember-Device` on `/v1/voice` uploads
       (falls back to `local` when unset).
 - [x] `Application` plumbs the config device id into the gateway client.
-- [x] Built and uploaded firmware `0.10.0-device-id` to the Fire on COM5.
+- [x] Built and uploaded firmware `0.10.0-device-id` to the Fire on COMxx.
 - [x] Physical verification: id generated once, reloaded from NVS on a later boot
       (no regeneration), microSD backup written, Wi-Fi join and face loop unaffected.
 

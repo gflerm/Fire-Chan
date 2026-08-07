@@ -2,7 +2,7 @@
 
 **Target:** M5Stack Fire v2.5  
 **Working directory:** `D:\projects\Fire-Chan`  
-**Diagnostic serial port:** `COM5` at 115200 baud  
+**Diagnostic serial port:** `COMxx` at 115200 baud  
 **Last updated:** 2026-08-06
 
 ## Current milestone
@@ -15,7 +15,7 @@ Phases 0–3 and the voice-assistant round trip are substantially complete. Fire
 - [x] Added and committed the project brief and design specification.
 - [x] Created a PlatformIO project for `m5stack-fire` using the Arduino framework.
 - [x] Added M5Unified and Adafruit NeoPixel dependencies.
-- [x] Configured upload and monitoring on `COM5` at 115200 baud.
+- [x] Configured upload and monitoring on `COMxx` at 115200 baud.
 - [x] Built the firmware successfully with PlatformIO.
 - [x] Uploaded diagnostic firmware to the connected M5Stack Fire v2.5.
 - [x] Captured serial diagnostics from the physical device.
@@ -239,7 +239,7 @@ Results from the final diagnostic boot on 2026-08-04:
 | Subsystem | Result | Evidence / notes |
 |---|---|---|
 | Firmware build | PASS | Clean PlatformIO build |
-| Firmware upload | PASS | Image written and verified on `COM5` |
+| Firmware upload | PASS | Image written and verified on `COMxx` |
 | Display | PASS | M5Unified initialized a 320 x 240 display and rendered the status screen |
 | Internal heap | PASS | 274,992 bytes free at startup; about 230 KB during live reporting |
 | PSRAM | **FAIL** | Boot memory test failed repeatedly; `ESP.getPsramSize()` returned 0 |
@@ -337,7 +337,7 @@ inactivity Sleeping state. Firmware `0.9.1-thinking-state` makes Thinking an exp
 high-priority state from recording completion until gateway success or failure. Starting
 an accepted push-to-talk interaction also restores the resting face to Neutral. The fix
 built successfully with 72,272 bytes static RAM and 1,082,069 bytes flash, then uploaded
-successfully to COM5. Physical testing confirmed that Thinking now remains active until
+successfully to COMxx. Physical testing confirmed that Thinking now remains active until
 the response begins and Ember no longer enters Sleeping during the request.
 
 ### Gemini latency baseline and paused optimization — 2026-08-06
@@ -428,7 +428,7 @@ change the resting state. Mute is applied after Ember says “Muted”; unmute i
 before playback so its confirmation can be heard. Informational `time` and `status`
 actions deliberately do not change device state.
 
-Firmware `0.9.0-assistant-directives` built and uploaded successfully to COM5. The
+Firmware `0.9.0-assistant-directives` built and uploaded successfully to COMxx. The
 verified boot mounted microSD, initialized the Ember client and three-buffer player,
 retained speech level 141, and rejoined Wi-Fi at `192.168.8.124` (-27 dBm). The face
 loop remained stable at 27.6–27.7 FPS with about 79.7 KB free heap. The known PSRAM
@@ -439,8 +439,8 @@ without it. Spoken command behavior remains the next physical user check.
 
 ```powershell
 pio run
-pio run --target upload --upload-port COM5
-pio device monitor --port COM5 --baud 115200
+pio run --target upload --upload-port COMxx
+pio device monitor --port COMxx --baud 115200
 ```
 
 ## 2026-08-07 status (scope B: latency)
