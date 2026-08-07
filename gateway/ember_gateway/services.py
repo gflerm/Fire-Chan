@@ -1,4 +1,5 @@
 from pathlib import Path
+
 import httpx
 
 from .llm import ConversationProvider, ConversationResult
@@ -27,8 +28,8 @@ class LocalVoiceServices:
         payload = response.json()
         return str(payload.get("text", "")).strip()
 
-    async def chat(self, transcript: str, personality: str) -> ConversationResult:
-        return await self.conversation.chat(transcript, personality)
+    async def chat(self, messages: list[dict]) -> ConversationResult:
+        return await self.conversation.chat(messages)
 
     async def synthesize(self, text: str, output_path: Path) -> None:
         async with httpx.AsyncClient(timeout=120) as client:

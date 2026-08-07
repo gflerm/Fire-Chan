@@ -17,6 +17,7 @@ class VoiceGatewayClient {
   void begin();
   bool submit(const char* recordingPath);
   VoiceGatewayEvent update();
+  void setDeviceId(const char* id);
 
   bool busy() const { return state_ == State::Pending || state_ == State::Working; }
   const char* transcript() const { return transcript_; }
@@ -50,6 +51,7 @@ class VoiceGatewayClient {
   char expression_[kHintCapacity] = {};
   char action_[kHintCapacity] = {};
   char error_[kErrorCapacity] = {};
+  char deviceId_[33] = {};
   uint8_t downloadBuffer_[kDownloadBufferSize] = {};
 };
 

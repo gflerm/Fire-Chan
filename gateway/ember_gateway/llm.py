@@ -20,7 +20,13 @@ class ConversationProvider(ABC):
     name: str
 
     @abstractmethod
-    async def chat(self, transcript: str, personality: str) -> ConversationResult:
+    async def chat(self, messages: list[dict]) -> ConversationResult:
+        """Run a full conversation thread.
+
+        ``messages`` is a list of ``{"role", "content"}`` dicts. The first entry
+        is the system message; subsequent entries alternate user and assistant so
+        the model sees recent turn history.
+        """
         raise NotImplementedError
 
     @abstractmethod
@@ -35,17 +41,14 @@ class OllamaProvider(ConversationProvider):
         self.base_url = base_url
         self.model = model
 
-    async def chat(self, transcript: str, personality: str) -> ConversationResult:
+    async def chat(self, messages: list[dict]) -> ConversationResult:
         async with httpx.AsyncClient(timeout=180) as client:
             response = await client.post(
                 f"{self.base_url}/api/chat",
                 json={
                     "model": self.model,
                     "stream": False,
-                    "messages": [
-                        {"role": "system", "content": personality},
-                        {"role": "user", "content": transcript},
-                    ],
+                    "messages": messages,
                     "options": {"temperature": 0.7, "num_predict": 100},
                 },
             )
@@ -79,21 +82,34 @@ class GeminiProvider(ConversationProvider):
         self.base_url = base_url.rstrip("/")
         self.transport = transport
 
-    async def chat(self, transcript: str, personality: str) -> ConversationResult:
+    async def chat(self, messages: list[dict]) -> ConversationResult:
+        system_text = "\n".join(
+            str(message.get("content", ""))
+            for message in messages
+            if message.get("role") == "system"
+        ).strip()
+        contents = [
+            {
+                "role": "model" if message.get("role") == "assistant" else "user",
+                "parts": [{"text": str(message.get("content", ""))}],
+            }
+            for message in messages
+            if message.get("role") != "system"
+        ]
+        payload: dict = {
+            "contents": contents,
+            "generationConfig": {
+                "maxOutputTokens": 120,
+                "thinkingConfig": {"thinkingLevel": "minimal"},
+            },
+        }
+        if system_text:
+            payload["systemInstruction"] = {"parts": [{"text": system_text}]}
         async with httpx.AsyncClient(timeout=30, transport=self.transport) as client:
             response = await client.post(
                 f"{self.base_url}/models/{self.model}:generateContent",
                 headers={"x-goog-api-key": self.api_key},
-                json={
-                    "systemInstruction": {"parts": [{"text": personality}]},
-                    "contents": [
-                        {"role": "user", "parts": [{"text": transcript}]}
-                    ],
-                    "generationConfig": {
-                        "maxOutputTokens": 120,
-                        "thinkingConfig": {"thinkingLevel": "minimal"},
-                    },
-                },
+                json=payload,
             )
         response.raise_for_status()
         payload = response.json()
@@ -132,9 +148,9 @@ class FallbackProvider(ConversationProvider):
         self.fallback = fallback
         self.name = primary.name
 
-    async def chat(self, transcript: str, personality: str) -> ConversationResult:
+    async def chat(self, messages: list[dict]) -> ConversationResult:
         try:
-            return await self.primary.chat(transcript, personality)
+            return await self.primary.chat(messages)
         except (httpx.HTTPError, RuntimeError, KeyError, ValueError) as error:
             if self.fallback is None:
                 raise
@@ -144,7 +160,7 @@ class FallbackProvider(ConversationProvider):
                 type(error).__name__,
                 self.fallback.name,
             )
-            return await self.fallback.chat(transcript, personality)
+            return await self.fallback.chat(messages)
 
     async def health(self) -> bool:
         if await self.primary.health():

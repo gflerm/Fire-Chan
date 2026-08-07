@@ -21,6 +21,8 @@ class Settings:
     gemini_model: str
     piper_url: str
     personality: str
+    session_max_turns: int
+    session_idle_seconds: float
 
     @classmethod
     def from_environment(cls) -> "Settings":
@@ -63,4 +65,6 @@ class Settings:
             gemini_model=os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite"),
             piper_url=os.getenv("PIPER_URL", "http://127.0.0.1:5000").rstrip("/"),
             personality=personality_path.read_text(encoding="utf-8").strip(),
+            session_max_turns=max(int(os.getenv("SESSION_MAX_TURNS", "6")), 1),
+            session_idle_seconds=max(float(os.getenv("SESSION_IDLE_SECONDS", "1800")), 0),
         )

@@ -1,0 +1,3 @@
+You should look at an edge, on-device, or embedded model.
+But timestamp the steps and then see where you bottleneck really is. 
+After the demonstration I saw I also suspect you would better be served by a "conventional intent classifier" , something like FuncGemma 270M .... super small compared, and lot faster... also check out sherpa-onnx for the speech ... but your current selection is fine. Also look into AI routers,....

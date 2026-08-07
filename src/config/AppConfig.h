@@ -16,6 +16,7 @@ struct AppConfig {
   uint8_t maxRecordingSeconds = 12;
   bool muted = false;
   bool demoMode = false;
+  char deviceId[33] = {};
 
   void validate() {
     displayBrightnessPercent = constrain(displayBrightnessPercent, 10, 100);

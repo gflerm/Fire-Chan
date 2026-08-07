@@ -9,6 +9,7 @@ class CommandResult:
     reply: str
     expression: str = "happy"
     action: str | None = None
+    clear_session: bool = False
 
 
 def match_local_command(
@@ -25,6 +26,19 @@ def match_local_command(
             f"It's {hour}:{current:%M} {current:%p}.",
             "happy",
             "time",
+        )
+    if re.search(r"\b(what('| i)s the date|what date is it|today('| i)?s date|what day is it)\b", normalized):
+        current = now or datetime.now(ZoneInfo(timezone))
+        return CommandResult(
+            f"Today is {current:%A}, {current:%d} {current:%B} {current:%Y}.",
+            "happy",
+            "time",
+        )
+    if re.search(r"\b(forget|clear|wipe|reset)\b.*\b(conversation|memory|everything|this|it)\b", normalized) or re.search(r"\bstart over\b", normalized):
+        return CommandResult(
+            "I've forgotten our conversation. What would you like to talk about?",
+            "neutral",
+            clear_session=True,
         )
     if re.search(r"\b(what('| i)s your name|who are you)\b", normalized):
         return CommandResult("I'm Ember. It's lovely to meet you.", "happy")

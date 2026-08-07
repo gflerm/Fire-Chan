@@ -3,6 +3,7 @@
 #include <Preferences.h>
 #include <SD.h>
 #include <SPI.h>
+#include <esp_random.h>
 
 namespace firechan {
 namespace {
@@ -12,6 +13,20 @@ constexpr char kBackupPath[] = "/config/device.json";
 constexpr char kTemporaryPath[] = "/config/device.tmp";
 constexpr uint8_t kSdChipSelect = 4;
 constexpr uint32_t kSaveDelayMs = 1500;
+constexpr char kHexDigits[] = "0123456789abcdef";
+
+bool ensureDeviceId(AppConfig& config) {
+  if (config.deviceId[0] != '\0') return true;
+  uint8_t bytes[16];
+  for (uint8_t& byte : bytes) byte = static_cast<uint8_t>(esp_random() & 0xFF);
+  size_t index = 0;
+  for (uint8_t byte : bytes) {
+    config.deviceId[index++] = kHexDigits[byte >> 4];
+    config.deviceId[index++] = kHexDigits[byte & 0x0F];
+  }
+  config.deviceId[index] = '\0';
+  return config.deviceId[0] != '\0';
+}
 }
 
 bool ConfigManager::loadNvs(AppConfig& config) {
@@ -32,6 +47,7 @@ bool ConfigManager::loadNvs(AppConfig& config) {
   config.maxRecordingSeconds = preferences.getUChar("maxvoice", 12);
   config.muted = preferences.getBool("muted", false);
   config.demoMode = preferences.getBool("demo", false);
+  preferences.getString("deviceid", config.deviceId, sizeof(config.deviceId));
   preferences.end();
   config.validate();
   return true;
@@ -51,6 +67,7 @@ bool ConfigManager::saveNvs(const AppConfig& config) {
   ok &= preferences.putUChar("maxvoice", config.maxRecordingSeconds) > 0;
   ok &= preferences.putBool("muted", config.muted) > 0;
   ok &= preferences.putBool("demo", config.demoMode) > 0;
+  ok &= preferences.putString("deviceid", config.deviceId) > 0;
   preferences.end();
   return ok;
 }
@@ -71,6 +88,7 @@ bool ConfigManager::writeSdBackup(const AppConfig& config) {
   file.printf("  \"schema_version\": %u,\n", AppConfig::kSchemaVersion);
   file.printf("  \"device\": {\n");
   file.printf("    \"name\": \"Fire-chan\",\n");
+  file.printf("    \"deviceId\": \"%s\",\n", config.deviceId[0] ? config.deviceId : "unset");
   file.printf("    \"timezone\": \"Africa/Johannesburg\",\n");
   file.printf("    \"brightness\": %u,\n", config.displayBrightnessPercent);
   file.printf("    \"volume\": %u,\n", config.volumePercent);
@@ -108,6 +126,17 @@ void ConfigManager::begin(AppConfig& config) {
   } else {
     Serial.println("[CONFIG] NVS settings loaded");
   }
+
+  if (config.deviceId[0] == '\0') {
+    if (ensureDeviceId(config)) {
+      Serial.printf("[CONFIG] deviceId generated, persistence=%s\n",
+                    saveNvs(config) ? "ok" : "failed");
+    } else {
+      Serial.println("[CONFIG] deviceId generation failed");
+    }
+  }
+  Serial.printf("[CONFIG] deviceId=%s\n", config.deviceId[0]
+                  ? config.deviceId : "unset");
 
   sdAvailable_ = mountSd();
   Serial.printf("[CONFIG] microSD=%s backup=%s\n",

@@ -9,11 +9,17 @@ from fastapi.responses import FileResponse
 from .commands import choose_expression, match_local_command
 from .config import Settings
 from .llm import FallbackProvider, GeminiProvider, OllamaProvider
+from .memory import SessionStore
 from .services import LocalVoiceServices
 from . import __version__
 
 settings = Settings.from_environment()
 settings.audio_dir.mkdir(parents=True, exist_ok=True)
+
+sessions = SessionStore(
+    max_turns=settings.session_max_turns,
+    idle_seconds=settings.session_idle_seconds,
+)
 
 ollama = OllamaProvider(settings.ollama_url, settings.ollama_model)
 if settings.llm_provider == "gemini":
@@ -63,7 +69,12 @@ async def health(_: None = Depends(authorize)) -> dict:
 
 
 @app.post("/v1/voice")
-async def voice(file: UploadFile = File(...), _: None = Depends(authorize)) -> dict:
+async def voice(
+    file: UploadFile = File(...),
+    _: None = Depends(authorize),
+    x_ember_device: str = Header(default=""),
+) -> dict:
+    device_id = x_ember_device.strip() or "default"
     request_started = time.perf_counter()
     if file.content_type not in ("audio/wav", "audio/x-wav", "application/octet-stream"):
         raise HTTPException(status_code=415, detail="A WAV recording is required")
@@ -93,11 +104,19 @@ async def voice(file: UploadFile = File(...), _: None = Depends(authorize)) -> d
     if command:
         reply, expression, action = command.reply, command.expression, command.action
         reply_provider = "local-command"
+        if command.clear_session:
+            sessions.clear(device_id)
+        else:
+            sessions.append(device_id, transcript, reply)
     else:
-        conversation_reply = await services.chat(transcript, settings.personality)
+        messages = [{"role": "system", "content": settings.personality}]
+        messages.extend(sessions.history(device_id))
+        messages.append({"role": "user", "content": transcript})
+        conversation_reply = await services.chat(messages)
         reply = conversation_reply.text
         reply_provider = conversation_reply.provider
         expression, action = choose_expression(reply), None
+        sessions.append(device_id, transcript, reply)
     replied_at = time.perf_counter()
 
     prune_audio()

@@ -48,6 +48,10 @@ bool VoiceGatewayClient::submit(const char* recordingPath) {
   return true;
 }
 
+void VoiceGatewayClient::setDeviceId(const char* id) {
+  strlcpy(deviceId_, id ? id : "", sizeof(deviceId_));
+}
+
 VoiceGatewayEvent VoiceGatewayClient::update() {
   if (state_ == State::Ready) {
     state_ = State::Idle;
@@ -98,6 +102,7 @@ bool VoiceGatewayClient::downloadAudio(const char* audioUrl) {
   request.beginRequest();
   request.get(audioUrl);
   request.sendHeader("X-Ember-Token", secrets::kEmberToken);
+  request.sendHeader("Connection", "close");
   request.endRequest();
 
   const int status = request.responseStatusCode();
@@ -213,8 +218,10 @@ bool VoiceGatewayClient::performRequest() {
   request.beginRequest();
   request.post(kVoicePath);
   request.sendHeader("X-Ember-Token", secrets::kEmberToken);
+  request.sendHeader("X-Ember-Device", deviceId_[0] ? deviceId_ : "local");
   request.sendHeader("Content-Type", String("multipart/form-data; boundary=") + kBoundary);
   request.sendHeader("Content-Length", contentLength);
+  request.sendHeader("Connection", "close");
   request.beginBody();
   request.print(prefix);
 

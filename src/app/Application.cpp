@@ -89,6 +89,7 @@ void Application::begin() {
   Serial.println("========================================");
 
   configManager_.begin(config_);
+  voiceGateway_.setDeviceId(config_.deviceId);
   voice_.begin(configManager_.sdAvailable(), config_.maxRecordingSeconds);
   network_.begin(millis());
   voiceGateway_.begin();

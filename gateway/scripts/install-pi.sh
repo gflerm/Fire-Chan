@@ -21,7 +21,7 @@ CONFIG_DIR="/etc/ember"
 echo "Installing system packages..."
 apt-get update
 apt-get install -y ca-certificates curl git build-essential cmake libopenblas-dev \
-  python3 python3-venv python3-pip openssl
+  python3 python3-venv python3-pip openssl ffmpeg
 
 if ! id ember >/dev/null 2>&1; then
   useradd --system --home-dir "${INSTALL_DIR}" --create-home --shell /usr/sbin/nologin ember
