@@ -39,6 +39,7 @@ services = LocalVoiceServices(
     settings.whisper_url,
     conversation,
     settings.piper_url,
+    settings.audio_rate_hz,
 )
 app = FastAPI(title="Ember Local Voice Gateway", version=__version__)
 

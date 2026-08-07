@@ -442,3 +442,14 @@ pio run
 pio run --target upload --upload-port COM5
 pio device monitor --port COM5 --baud 115200
 ```
+
+## 2026-08-07 status (scope B: latency)
+
+- Download is network-window bound ~28 KB/s (flat vs buffer size). Fixed the
+  earlier red error by serving canonical 44-byte PCM WAVs; 8 kHz replies now play
+  on-device and cut audio bytes ~3.5x / download ~2x. Kept on the Pi
+  (`EMBER_AUDIO_RATE_HZ=8000`).
+- Firmware 0.12.0-stream-play (early-start streaming) red-errored on device and
+  was reverted; firmware source restored to 0.11.0-download-conn (commit 557bf12).
+  Streaming re-attempt needs a serial capture of the error first.
+- Branch `oc-updates`; main untouched. See `opencode_update.md` for details.

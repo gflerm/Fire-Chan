@@ -210,3 +210,49 @@ User re-tested after the Piper-native rollback (22.05 kHz): voice turns are
 working again. The 8 kHz / 16 kHz format experiments are shelved; the resample
 change is fully reverted on both the Pi and the local source. The audio-format
 experiment remains OPEN pending a serial capture of the red error before retrying.
+
+### Unblocked: canonical-header 8 kHz works, streaming now feasible
+
+Root cause of the earlier 8 kHz / 16 kHz red screen: the ffmpeg-resampled WAV
+layout. Rewrote the gateway resampler to emit a STRICT 44-byte canonical PCM WAV
+(`canonical_pcm_wav`: s16le + RIFF/fmt/data header, blockAlign=2, bytesPerSec set),
+instead of ffmpeg's `-f wav` output. This matches exactly what the Fire's parser
+validates.
+- `services.py`: `resample_to()` -> ffmpeg `-f s16le -ar <rate>` then wrap in
+  canonical header. `audio_rate_hz` threaded via config (`EMBER_AUDIO_RATE_HZ`,
+  default `0` = Piper-native passthrough; floor 0). `main.py` passes it.
+- Deployed to Pi; test at 8000 Hz on device:
+  - `[PLAYBACK] started rate=8000Hz ... bytes=22664` -- parses and plays (no error).
+  - Same "What time is it?" reply: bytes 78 KB(22.05k) -> 22.1 KB(8k), and
+    `audio_download` 3.1 s -> 1.48 s (~2.1x NT). `ready_total` ~6.8 s dominated by
+    `fire_request` (5.3 s).
+- Streaming is now VIABLE: at 8 kHz real-time playback = 16 KB/s while download
+  runs ~28 KB/s (~1.75x head), so early-start playback can run without starving
+  (this was BLOCKED at 22.05 kHz where play 44 KB/s > download 28 KB/s).
+- Rec: keep `EMBER_AUDIO_RATE_HZ=8000` on the Pi; awaiting the 8 kHz sound-quality
+  verdict, then implement streamed early-start playback via a RAM ring buffer fed
+  from the download, consuming to M5.Speaker (avoiding concurrent SD read/write).
+
+### Streamed early-start playback: attempt FAILED (red error), rolled back
+
+Implemented on branch `oc-updates` as firmware 0.12.0-stream-play:
+- New `src/audio/AudioStreamSink.h` interface (producer -> sink).
+- `ResponseAudioPlayer` gained a streaming mode: a 32 KB RAM ring fed by the
+  gateway, plus `performStreamPlayback()` which parses the WAV header from the
+  ring and feeds M5.Speaker live (`StreamPending/StreamPlaying` states).
+- `VoiceGatewayClient` pushes each downloaded batch into the sink while also
+  writing to SD; `beginStream/streamWrite/endStream` driven from its task.
+- `Application` wires the sink, detects streaming start to publish
+  `SpeakingStarted`/suspend the mic, and applies the directive on `Finished`
+  (or immediately if muted / not streaming).
+- Build clean; flashed; user observed a RED ERROR screen on the turn -> reverted
+  to the last known-good firmware 0.11.0-download-conn (git checkout 557bf12),
+  reflashed, confirmed working again.
+- OPEN (do NOT re-attempt blind): capture the streaming-turn red error on serial
+  first. Candidates to check next time: M5.Speaker begin while a previous
+  playback is active, ring starvation causing `pullBytes` timeout to trip a
+  false failure path, or speaker task interleaving with the gateway download
+  task. Since the 8 kHz canonical WAV path itself works, the red screen is
+  specific to the streaming build.
+- Repo state: firmware source fully reverted; gateway (Pi + source) still at
+  `EMBER_AUDIO_RATE_HZ=8000` with the canonical-header resampler (kept).
