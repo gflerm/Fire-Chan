@@ -447,3 +447,17 @@ MULTI_TURN_DEPLOY_VERIFY status note, and this log. File cleanup: renamed
 - Deployed to the Pi via `sudo scripts/update-pi.sh`; `/health` OK, version 0.7.0.
 - Remaining: user confirmation of the detected location, and a live Fire turn
   exercising "what's the weather" end to end.
+
+## 2026-08-08 (continued) — No-speech turns are graceful (gateway 0.7.1)
+
+- User report: weather/replies work, but sometimes after talking the Fire shows
+  the error face. Pi logs showed two `POST /v1/voice 422` entries in the window.
+- Root cause: when whisper.cpp transcribes an empty transcript (quiet/too-short
+  prompt), the gateway returned `422 No speech was detected`. The Fire treats
+  any non-200 as a request failure, so it flashed the Error face for 3 s.
+- Fix in `main.py`: the voice endpoint no longer raises 422 on an empty
+  transcript. It returns a 200 with a spoken "Sorry, I didn't catch that. Could
+  you say it again?" reply (expression `confused`), so the Fire synthesizes and
+  plays a graceful prompt instead of showing the error face. No session entry is
+  recorded for an empty turn.
+- Version bumped to `0.7.1`; 81 tests still pass; compile check OK.

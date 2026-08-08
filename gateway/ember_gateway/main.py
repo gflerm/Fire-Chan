@@ -181,7 +181,10 @@ async def voice(
             temporary.unlink(missing_ok=True)
 
     if not transcript:
-        raise HTTPException(status_code=422, detail="No speech was detected")
+        transcript = ""
+        no_speech = True
+    else:
+        no_speech = False
 
     announcement: str | None = None
     due = timers.due(device_id)
@@ -216,6 +219,10 @@ async def voice(
             sessions.clear(device_id)
         else:
             sessions.append(device_id, transcript, reply)
+    elif no_speech:
+        reply = "Sorry, I didn't catch that. Could you say it again?"
+        reply_provider = "local-command"
+        expression, action = "confused", None
     else:
         messages = [{"role": "system", "content": settings.personality}]
         messages.extend(sessions.history(device_id))
