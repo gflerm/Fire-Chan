@@ -858,7 +858,7 @@ Example status response:
   "state": "idle",
   "expression": "neutral",
   "wifi_connected": true,
-  "ip_address": "192.168.1.50",
+  "ip_address": "xxx.xxx.xxx.xxx",
   "volume": 65,
   "brightness": 70,
   "muted": false,

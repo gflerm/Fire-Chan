@@ -90,7 +90,7 @@ deferred latency-optimization milestones.
 
 - [x] Set up passwordless SSH to the Pi: new `id_ed25519` key at
       `C:\Users\glerm\.ssh\id_ed25519` (no passphrase), public key authorized for
-      `georg@192.168.8.107`.
+      `georg@xxx.xxx.xxx.xxx`.
 - [x] Transferred `gateway/` to `/home/georg/fire-chan-gateway` on the Pi (cleaned
       up a duplicated nested copy left by an earlier timed-out transfer).
 - [x] Ran `sudo ./scripts/update-pi.sh`: restarted `ember-gateway`, installed the
@@ -190,7 +190,7 @@ reply rate is tunable gateway-side only.
 
 ### 8 kHz and 16 kHz field test: FAILED, reverted to Piper-native 22.05 kHz
 
-Deployed to the Pi (192.168.8.107) with `EMBER_AUDIO_RATE_HZ=8000` and then `16000`.
+Deployed to the Pi (xxx.xxx.xxx.xxx) with `EMBER_AUDIO_RATE_HZ=8000` and then `16000`.
 BOTH rates produced a red error screen on the Fire during the turn (device-side),
 so the sample-rate resampling is reverted.
 - Rollback = exact prior working state: removed the ffmpeg resample from
@@ -333,7 +333,7 @@ MULTI_TURN_DEPLOY_VERIFY status note, and this log. File cleanup: renamed
   `/v1/voice` reads `X-Ember-Device-Status` and the "status"/"how are you" reply
   is grounded in those facts when present. 30 tests passing.
 - Boot capture on device: `[CONFIG] volume=75% muted=false`, Wi-Fi online
-  (`192.168.8.124`, rssi=-54), gateway task ready, PSRAM test fail as documented
+  (`xxx.xxx.xxx.xxx`, rssi=-54), gateway task ready, PSRAM test fail as documented
   (optional PSRAM not fitted). Stable heap while idle.
 - Definition of done for slice 2: a live spoken volume turn through the gateway
   and a confirmed persisted value. Not yet physically verified on this session.

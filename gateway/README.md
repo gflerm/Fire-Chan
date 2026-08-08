@@ -11,7 +11,7 @@ selectable local or cloud conversation provider:
 
 ## Current deployed baseline
 
-The stack is running on a Raspberry Pi 5 with 8 GB RAM and SSD at `192.168.8.107:8088`.
+The stack is running on a Raspberry Pi 5 with 8 GB RAM and SSD at `xxx.xxx.xxx.xxx:8088`.
 Fire firmware `0.11.1-volume-status` records a 16 kHz mono prompt, uploads it in a
 background task with its `X-Ember-Device-Status` facts, downloads the response WAV
 to microSD, streams it with three bounded internal-RAM buffers, and applies the

@@ -377,12 +377,12 @@ compressed response audio if voice quality remains acceptable.
 ### Fire-to-Pi connection
 
 Firmware `0.7.0-pi-gateway` adds a modular Wi-Fi manager and an assistant client for
-the gateway at `192.168.8.107:8088`. Long HTTP requests and SD reads run in a dedicated
+the gateway at `xxx.xxx.xxx.xxx:8088`. Long HTTP requests and SD reads run in a dedicated
 FreeRTOS task so the face loop stays responsive. Credentials live only in the ignored
 `include/secrets.h`; `include/secrets.example.h` documents the required values.
 
 The firmware builds successfully with no warnings. Live hardware verification passed on
-2026-08-04: the Fire joined Wi-Fi as `192.168.8.124` at -44 dBm, uploaded a 3.891-second
+2026-08-04: the Fire joined Wi-Fi as `xxx.xxx.xxx.xxx` at -44 dBm, uploaded a 3.891-second
 124,528-byte recording, and stayed responsive at roughly 25–27 FPS during processing.
 The Pi transcribed "What is your name?" exactly and returned "I'm Ember. It's lovely to
 meet you." The response-ready expression was applied successfully.
@@ -430,7 +430,7 @@ actions deliberately do not change device state.
 
 Firmware `0.9.0-assistant-directives` built and uploaded successfully to COMxx. The
 verified boot mounted microSD, initialized the Ember client and three-buffer player,
-retained speech level 141, and rejoined Wi-Fi at `192.168.8.124` (-27 dBm). The face
+retained speech level 141, and rejoined Wi-Fi at `xxx.xxx.xxx.xxx` (-27 dBm). The face
 loop remained stable at 27.6–27.7 FPS with about 79.7 KB free heap. The known PSRAM
 test still fails before application startup, while the firmware continues normally
 without it. Spoken command behavior remains the next physical user check.
