@@ -132,6 +132,11 @@ void Application::applyPendingAssistantDirective(uint32_t nowMs) {
                 pendingDirective_.hasExpression
                     ? expressionName(pendingDirective_.expression) : "none",
                 AssistantDirectiveParser::actionName(pendingDirective_.action));
+  if (pendingDirective_.action == AssistantAction::SetAlarm) {
+    Serial.printf("[ASSISTANT] SetAlarm time=%lu label=%s\n",
+                  static_cast<unsigned long>(pendingDirective_.alarmTime),
+                  pendingDirective_.alarmLabel);
+  }
   applyAction(behavior_.applyAssistantDirective(pendingDirective_, nowMs));
   hasPendingDirective_ = false;
 }
@@ -204,6 +209,9 @@ void Application::update() {
       pendingDirective_.alarmTime = voiceGateway_.pendingAlarmTime();
       strlcpy(pendingDirective_.alarmLabel, voiceGateway_.pendingAlarmLabel(),
               sizeof(pendingDirective_.alarmLabel));
+      Serial.printf("[ASSISTANT] routing alarm directive time=%lu label=%s\n",
+                    static_cast<unsigned long>(pendingDirective_.alarmTime),
+                    pendingDirective_.alarmLabel);
     }
     hasPendingDirective_ = true;
     // Unmute must happen before deciding whether Ember may speak. Mute is
@@ -255,6 +263,13 @@ void Application::update() {
   rgb_.update(now);
   audio_.update(now);
   alarm_.update(now);
+  if (alarm_.wasCleared()) {
+    // The AlarmManager cleared a stale deadline; persist the cleared state
+    // so the next reboot doesn't reload it from NVS.
+    config_.alarmTime = 0;
+    config_.alarmLabel[0] = '\0';
+    configManager_.markDirty(now);
+  }
   configManager_.update(now, config_);
 }
 

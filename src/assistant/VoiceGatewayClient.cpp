@@ -284,8 +284,11 @@ bool VoiceGatewayClient::performRequest() {
   const uint32_t audioReadyMs = millis();
   Serial.printf("[ASSISTANT] heard: %s\n", transcript_);
   Serial.printf("[ASSISTANT] Ember: %s\n", reply_);
-  Serial.printf("[ASSISTANT] expression=%s action=%s\n", expression_,
-                action_[0] ? action_ : "none");
+  Serial.printf("[ASSISTANT] expression=%s action=%s alarm_time=%lu label=%s\n",
+                expression_,
+                action_[0] ? action_ : "none",
+                static_cast<unsigned long>(pendingAlarmTime_),
+                pendingAlarmLabel_[0] ? pendingAlarmLabel_ : "none");
   Serial.printf(
       "[LATENCY] provider=%s upload_validation=%lums transcription=%lums "
       "conversation=%lums synthesis=%lums gateway_total=%lums\n",

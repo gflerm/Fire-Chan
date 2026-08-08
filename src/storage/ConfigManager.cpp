@@ -69,9 +69,12 @@ bool ConfigManager::saveNvs(const AppConfig& config) {
   ok &= preferences.putUChar("maxvoice", config.maxRecordingSeconds) > 0;
   ok &= preferences.putBool("muted", config.muted) > 0;
   ok &= preferences.putBool("demo", config.demoMode) > 0;
-  ok &= preferences.putString("deviceid", config.deviceId) > 0;
+  // Strings: putString returns 0 for an empty value, which is a valid state
+  // (the key exists with an empty string). Use >= 0 so an empty label does
+  // not fail the entire save.
+  ok &= static_cast<int>(preferences.putString("deviceid", config.deviceId)) >= 0;
   ok &= preferences.putUInt("alarmTime", config.alarmTime) > 0;
-  ok &= preferences.putString("alarmLabel", config.alarmLabel) > 0;
+  ok &= static_cast<int>(preferences.putString("alarmLabel", config.alarmLabel)) >= 0;
   preferences.end();
   return ok;
 }

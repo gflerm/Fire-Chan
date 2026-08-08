@@ -57,13 +57,34 @@ void AlarmManager::clearAlarm() {
   Serial.println("[ALARM] cleared");
 }
 
+// Track whether we have logged a successful NTP sync, to avoid spamming the
+// serial monitor with the same time every second.
+namespace {
+bool ntpLogged = false;
+}
+
 void AlarmManager::update(uint32_t nowMs) {
   // Phase 1: check the deadline once a second and fire when it arrives.
   if (alarmTime_ != 0 && !fired_ &&
       static_cast<int32_t>(nowMs - lastCheckMs_) >= 0) {
     lastCheckMs_ = nowMs + kCheckIntervalMs;
     const time_t now = time(nullptr);
-    if (now >= 0 && static_cast<uint32_t>(now) >= alarmTime_) {
+    if (now > 1000000 && !ntpLogged) {
+      // The NTP sync has completed (time() returned a real epoch value).
+      Serial.printf("[ALARM] clock synced unix=%ld\n", static_cast<long>(now));
+      ntpLogged = true;
+    }
+    // If NTP has not synced, time() returns 0; skip the deadline check.
+    if (now <= 0) return;
+    if (alarmTime_ + 60 < static_cast<uint32_t>(now)) {
+      // The alarm is more than 60 seconds in the past -- it was set for a
+      // previous session and the device was off. Clear it so it doesn't
+      // fire on every reboot.
+      Serial.println("[ALARM] stale deadline cleared");
+      alarmTime_ = 0;
+      label_[0] = '\0';
+      cleared_ = true;
+    } else if (static_cast<uint32_t>(now) >= alarmTime_) {
       fireAlarm(nowMs);
     }
   }

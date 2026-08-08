@@ -23,6 +23,9 @@ class AlarmManager {
 
   bool hasAlarm() const { return alarmTime_ != 0; }
   bool isRinging() const { return ringing_; }
+  // True for one tick after a stale deadline was cleared, so the caller
+  // can persist the cleared state to NVS.
+  bool wasCleared() const { return cleared_; }
   uint32_t alarmTime() const { return alarmTime_; }
 
  private:
@@ -39,6 +42,7 @@ class AlarmManager {
   bool ringing_ = false;
   bool fired_ = false;
   bool soundStarted_ = false;
+  bool cleared_ = false;
   char label_[32] = {};
 };
 
