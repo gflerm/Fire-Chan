@@ -27,6 +27,7 @@ enum class AppEventType : uint8_t {
   TemporaryExpressionExpired,
   AlarmStarted,
   AlarmCleared,
+  AlarmDismissRequested,
   ErrorRaised,
   ErrorCleared,
   ListeningStarted,

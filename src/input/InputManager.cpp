@@ -12,6 +12,7 @@ const char* inputEventName(InputEvent event) {
     case InputEvent::ToggleDemo: return "button-c/toggle-demo";
     case InputEvent::ToggleSound: return "button-c-long/toggle-sound";
     case InputEvent::ResetNeutral: return "button-b-long/neutral";
+    case InputEvent::DismissAlarm: return "button-b/dismiss-alarm";
     case InputEvent::Shake: return "shake";
     case InputEvent::PickedUp: return "picked-up";
     case InputEvent::FaceDown: return "face-down";
@@ -42,7 +43,10 @@ InputState InputManager::update(uint32_t nowMs) {
     state.event = InputEvent::ResetNeutral;
     gestures_.noteInteraction(nowMs);
   } else if (M5.BtnB.wasClicked()) {
-    state.event = InputEvent::NextExpression;
+    // Button B is overloaded: when the alarm is ringing it dismisses the
+    // alarm; otherwise it advances the expression in demo/manual mode. The
+    // Application routes it based on the current alarm state.
+    state.event = InputEvent::DismissAlarm;
     gestures_.noteInteraction(nowMs);
   } else if (M5.BtnC.wasClicked()) {
     state.event = InputEvent::ToggleDemo;

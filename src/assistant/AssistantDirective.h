@@ -12,7 +12,8 @@ enum class AssistantAction : uint8_t {
   Wake,
   Mute,
   Unmute,
-  Volume
+  Volume,
+  SetAlarm
 };
 
 struct AssistantDirective {
@@ -23,6 +24,9 @@ struct AssistantDirective {
   bool volumeAbsolute = false;
   uint8_t volumeTarget = 0;
   int8_t volumeDelta = 0;
+  // SetAlarm: the Unix timestamp (seconds) when the alarm should ring.
+  uint32_t alarmTime = 0;
+  char alarmLabel[32] = {};
 };
 
 class AssistantDirectiveParser {

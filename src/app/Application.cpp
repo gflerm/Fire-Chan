@@ -12,6 +12,7 @@ AppEventType Application::mapInputEvent(InputEvent event) const {
     case InputEvent::ToggleDemo: return AppEventType::ToggleDemo;
     case InputEvent::ToggleSound: return AppEventType::ToggleSound;
     case InputEvent::ResetNeutral: return AppEventType::ResetNeutral;
+    case InputEvent::DismissAlarm: return AppEventType::AlarmDismissRequested;
     case InputEvent::Shake: return AppEventType::ShakeDetected;
     case InputEvent::PickedUp: return AppEventType::DevicePickedUp;
     case InputEvent::FaceDown: return AppEventType::DeviceFaceDown;
@@ -46,6 +47,12 @@ void Application::buildDeviceStatus(char* buffer, size_t size) const {
 void Application::handleCommandEvent(const AppEvent& event) {
   if (event.type == AppEventType::VoiceCaptureRequested && !voice_.recording() &&
       !voiceGateway_.busy() && !responsePlayer_.busy()) {
+    // If the alarm is ringing, the user pressing the talk button means they
+    // want to dismiss the alarm, not start a new capture.
+    if (alarm_.isRinging()) {
+      alarm_.clearAlarm();
+      return;
+    }
     audio_.suspend();
     if (voice_.start(event.timestampMs)) {
       events_.publish(AppEventType::ListeningStarted, event.timestampMs);
@@ -55,6 +62,15 @@ void Application::handleCommandEvent(const AppEvent& event) {
     }
   } else if (event.type == AppEventType::VoiceCaptureStopRequested) {
     voice_.requestStop();
+  } else if (event.type == AppEventType::AlarmDismissRequested) {
+    if (alarm_.isRinging()) {
+      alarm_.clearAlarm();
+    } else {
+      // The alarm is not ringing; treat the button as the regular
+      // "next expression" gesture so the existing demo/manual flow is
+      // preserved when no alarm is active.
+      events_.publish(AppEventType::NextExpression, event.timestampMs);
+    }
   }
 }
 
@@ -105,6 +121,12 @@ void Application::applyPendingAssistantDirective(uint32_t nowMs) {
                        pendingDirective_.volumeDelta;
       setAudioVolume(static_cast<uint8_t>(constrain(target, 0, 100)), nowMs);
     }
+  } else if (pendingDirective_.action == AssistantAction::SetAlarm) {
+    alarm_.setAlarm(pendingDirective_.alarmTime, pendingDirective_.alarmLabel);
+    config_.alarmTime = pendingDirective_.alarmTime;
+    strlcpy(config_.alarmLabel, pendingDirective_.alarmLabel,
+            sizeof(config_.alarmLabel));
+    configManager_.markDirty(nowMs);
   }
   Serial.printf("[ASSISTANT] apply expression=%s action=%s\n",
                 pendingDirective_.hasExpression
@@ -120,7 +142,7 @@ void Application::begin() {
   Serial.println(" Fire-chan event-driven personality test");
   Serial.printf(" Firmware: %s\n", FIRECHAN_VERSION);
   Serial.printf(" PSRAM: %u bytes (optional)\n", ESP.getPsramSize());
-  Serial.println(" Hold A=push-to-talk, B=next, C=auto/manual");
+  Serial.println(" Hold A=push-to-talk, B=next or dismiss-alarm, C=auto/manual");
   Serial.println(" Hold B=neutral, hold C=mute");
   Serial.println(" Tilt=gaze, pickup=surprised, shake=confused, face-down=sleep");
   Serial.println("========================================");
@@ -139,6 +161,10 @@ void Application::begin() {
   behavior_.begin(now, config_.demoMode);
   rgb_.setExpression(behavior_.expression());
   audio_.playExpression(behavior_.expression());
+  // Restore any alarm that was scheduled before the last reboot.
+  if (config_.alarmTime != 0) {
+    alarm_.setAlarm(config_.alarmTime, config_.alarmLabel);
+  }
   Serial.println("[EVENT] fixed queue capacity=16 ready");
 }
 
@@ -170,6 +196,15 @@ void Application::update() {
   if (gatewayEvent == VoiceGatewayEvent::ResponseReady) {
     pendingDirective_ = AssistantDirectiveParser::parse(
         voiceGateway_.expression(), voiceGateway_.action());
+    // If the gateway asked the device to set a local alarm, populate the
+    // directive with the timestamp and label so applyPendingAssistantDirective
+    // can persist it and hand it to the AlarmManager.
+    if (voiceGateway_.pendingAlarmTime() != 0) {
+      pendingDirective_.action = AssistantAction::SetAlarm;
+      pendingDirective_.alarmTime = voiceGateway_.pendingAlarmTime();
+      strlcpy(pendingDirective_.alarmLabel, voiceGateway_.pendingAlarmLabel(),
+              sizeof(pendingDirective_.alarmLabel));
+    }
     hasPendingDirective_ = true;
     // Unmute must happen before deciding whether Ember may speak. Mute is
     // deliberately deferred until her acknowledgement has finished.
@@ -219,6 +254,7 @@ void Application::update() {
   if (faceReady_) face_.update(now, behavior_.demoMode());
   rgb_.update(now);
   audio_.update(now);
+  alarm_.update(now);
   configManager_.update(now, config_);
 }
 

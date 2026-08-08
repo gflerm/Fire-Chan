@@ -15,6 +15,7 @@
 #include "network/NetworkManager.h"
 #include "assistant/AssistantDirective.h"
 #include "assistant/VoiceGatewayClient.h"
+#include "alarm/AlarmManager.h"
 
 namespace firechan {
 
@@ -44,6 +45,7 @@ class Application {
   NetworkManager network_;
   VoiceGatewayClient voiceGateway_;
   ResponseAudioPlayer responsePlayer_;
+  AlarmManager alarm_;
   AssistantDirective pendingDirective_;
   bool hasPendingDirective_ = false;
   bool faceReady_ = false;

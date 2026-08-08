@@ -267,6 +267,15 @@ bool VoiceGatewayClient::performRequest() {
   const char* audioUrl = document["audio_url"] | "";
   const char* provider = document["conversation_provider"] | "unknown";
   const JsonObject timings = document["timings_ms"];
+  // The gateway sets ``alarm_time`` (Unix seconds) when the user just
+  // scheduled an alarm; the Fire stores it locally and fires the sound at
+  // that deadline.
+  pendingAlarmTime_ = document["alarm_time"] | 0;
+  pendingAlarmLabel_[0] = '\0';
+  if (document.containsKey("alarm_label")) {
+    strlcpy(pendingAlarmLabel_, document["alarm_label"] | "",
+            sizeof(pendingAlarmLabel_));
+  }
   if (transcript_[0] == '\0' || reply_[0] == '\0') {
     setError("gateway response was incomplete");
     return false;

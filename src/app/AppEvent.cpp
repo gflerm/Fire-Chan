@@ -25,6 +25,7 @@ const char* appEventName(AppEventType type) {
     case AppEventType::TemporaryExpressionExpired: return "temporary-expired";
     case AppEventType::AlarmStarted: return "alarm-started";
     case AppEventType::AlarmCleared: return "alarm-cleared";
+    case AppEventType::AlarmDismissRequested: return "alarm-dismiss-requested";
     case AppEventType::ErrorRaised: return "error-raised";
     case AppEventType::ErrorCleared: return "error-cleared";
     case AppEventType::ListeningStarted: return "listening-started";

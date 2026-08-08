@@ -15,6 +15,7 @@ enum class InputEvent : uint8_t {
   ToggleDemo,
   ToggleSound,
   ResetNeutral,
+  DismissAlarm,
   Shake,
   PickedUp,
   FaceDown,

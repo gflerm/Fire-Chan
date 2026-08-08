@@ -1,10 +1,16 @@
 #include "network/NetworkManager.h"
 
 #include <WiFi.h>
+#include <time.h>
 
 #include "secrets.h"
 
 namespace firechan {
+namespace {
+constexpr char kNtpServer[] = "pool.ntp.org";
+constexpr long gmtOffsetSeconds = 2 * 3600;  // Africa/Johannesburg (SAST)
+constexpr int daylightOffsetSeconds = 0;
+}
 
 void NetworkManager::begin(uint32_t nowMs) {
   configured_ = secrets::kWifiSsid[0] != '\0' &&
@@ -38,6 +44,10 @@ void NetworkManager::update(uint32_t nowMs, EventBus& events) {
       strlcpy(address_, ip.c_str(), sizeof(address_));
       Serial.printf("[NETWORK] online ip=%s rssi=%ddBm\n", address_, WiFi.RSSI());
       events.publish(AppEventType::NetworkOnline, nowMs);
+      // Sync the system clock via NTP so the alarm can fire at the right time.
+      // Africa/Johannesburg (SAST) is UTC+2 with no DST.
+      configTime(gmtOffsetSeconds, daylightOffsetSeconds, kNtpServer);
+      Serial.println("[NETWORK] NTP sync requested");
     } else {
       strlcpy(address_, "0.0.0.0", sizeof(address_));
       Serial.println("[NETWORK] offline");

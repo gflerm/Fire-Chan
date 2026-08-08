@@ -27,6 +27,12 @@ class VoiceGatewayClient {
   const char* error() const { return error_; }
   const char* audioPath() const { return "/cache/ember_response.wav"; }
 
+  // If the last response carried an alarm directive, returns the alarm time
+  // (Unix seconds) and writes the label into ``label`` (max ``labelCapacity``).
+  // Returns 0 if no alarm was requested.
+  uint32_t pendingAlarmTime() const { return pendingAlarmTime_; }
+  const char* pendingAlarmLabel() const { return pendingAlarmLabel_; }
+
  private:
   enum class State : uint8_t { Idle, Pending, Working, Ready, Failed };
 
@@ -42,6 +48,7 @@ class VoiceGatewayClient {
   static constexpr size_t kHintCapacity = 24;
   static constexpr size_t kErrorCapacity = 96;
   static constexpr size_t kDownloadBufferSize = 4096;
+  static constexpr size_t kAlarmLabelCapacity = 32;
 
   TaskHandle_t task_ = nullptr;
   volatile State state_ = State::Idle;
@@ -53,6 +60,8 @@ class VoiceGatewayClient {
   char error_[kErrorCapacity] = {};
   char deviceId_[33] = {};
   char deviceStatus_[192] = {};
+  uint32_t pendingAlarmTime_ = 0;
+  char pendingAlarmLabel_[kAlarmLabelCapacity] = {};
   uint8_t downloadBuffer_[kDownloadBufferSize] = {};
 };
 

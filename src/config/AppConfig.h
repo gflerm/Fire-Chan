@@ -5,7 +5,7 @@
 namespace firechan {
 
 struct AppConfig {
-  static constexpr uint16_t kSchemaVersion = 1;
+  static constexpr uint16_t kSchemaVersion = 2;
 
   uint8_t displayBrightnessPercent = 70;
   uint8_t volumePercent = 65;
@@ -17,6 +17,10 @@ struct AppConfig {
   bool muted = false;
   bool demoMode = false;
   char deviceId[33] = {};
+  // Local alarm: Unix timestamp (seconds) when the alarm should ring; 0 means
+  // no alarm is scheduled. The label is shown in serial logs only.
+  uint32_t alarmTime = 0;
+  char alarmLabel[32] = {};
 
   void validate() {
     displayBrightnessPercent = constrain(displayBrightnessPercent, 10, 100);

@@ -85,6 +85,7 @@ const char* AssistantDirectiveParser::actionName(AssistantAction action) {
     case AssistantAction::Mute: return "mute";
     case AssistantAction::Unmute: return "unmute";
     case AssistantAction::Volume: return "volume";
+    case AssistantAction::SetAlarm: return "set-alarm";
     default: return "none";
   }
 }

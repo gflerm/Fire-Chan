@@ -48,6 +48,8 @@ bool ConfigManager::loadNvs(AppConfig& config) {
   config.muted = preferences.getBool("muted", false);
   config.demoMode = preferences.getBool("demo", false);
   preferences.getString("deviceid", config.deviceId, sizeof(config.deviceId));
+  config.alarmTime = preferences.getUInt("alarmTime", 0);
+  preferences.getString("alarmLabel", config.alarmLabel, sizeof(config.alarmLabel));
   preferences.end();
   config.validate();
   return true;
@@ -68,6 +70,8 @@ bool ConfigManager::saveNvs(const AppConfig& config) {
   ok &= preferences.putBool("muted", config.muted) > 0;
   ok &= preferences.putBool("demo", config.demoMode) > 0;
   ok &= preferences.putString("deviceid", config.deviceId) > 0;
+  ok &= preferences.putUInt("alarmTime", config.alarmTime) > 0;
+  ok &= preferences.putString("alarmLabel", config.alarmLabel) > 0;
   preferences.end();
   return ok;
 }
@@ -115,6 +119,10 @@ bool ConfigManager::writeSdBackup(const AppConfig& config) {
   file.printf("  \"assistant\": {\n");
   file.printf("    \"push_to_talk\": true,\n");
   file.printf("    \"max_recording_seconds\": %u\n", config.maxRecordingSeconds);
+  file.printf("  },\n");
+  file.printf("  \"alarm\": {\n");
+  file.printf("    \"time\": %lu,\n", static_cast<unsigned long>(config.alarmTime));
+  file.printf("    \"label\": \"%s\"\n", config.alarmLabel[0] ? config.alarmLabel : "");
   file.printf("  }\n");
   file.printf("}\n");
   file.flush();
@@ -151,13 +159,14 @@ void ConfigManager::begin(AppConfig& config) {
   Serial.printf("[CONFIG] microSD=%s backup=%s\n",
                 sdAvailable_ ? "ready" : "unavailable",
                 writeSdBackup(config) ? "ok" : "skipped/failed");
-  Serial.printf("[CONFIG] display=%u%% volume=%u%% muted=%s demo=%s rgb=%u%% gesture=%u%% idle=%us/%us voice=%us\n",
+  Serial.printf("[CONFIG] display=%u%% volume=%u%% muted=%s demo=%s rgb=%u%% gesture=%u%% idle=%us/%us voice=%us alarm=%lu\n",
                 config.displayBrightnessPercent, config.volumePercent,
                 config.muted ? "true" : "false",
                 config.demoMode ? "true" : "false",
                 config.rgbBrightnessPercent, config.gestureSensitivityPercent,
                 config.sleepyAfterSeconds, config.sleepingAfterSeconds,
-                config.maxRecordingSeconds);
+                config.maxRecordingSeconds,
+                static_cast<unsigned long>(config.alarmTime));
 }
 
 void ConfigManager::markDirty(uint32_t nowMs) {
