@@ -100,6 +100,52 @@ Acceptance:
 - [ ] Calendar integration (optional, separately authorized).
 - [ ] Configurable morning/evening summaries with a physical or web disable control.
 
+### Flexible AI handling (tool-calling / agentic layer)
+
+**Problem:** Today every new phrasing needs a new `_match_*` regex and a new
+handler in `commands.py` and `main.py`. The user wants "set an alarm for 5:30",
+"wake me at seven", and "remind me to take pills at 2pm" all to work without
+adding a new intent for each phrasing.
+
+**Is it possible?** Yes. This is the standard LLM tool-calling / function-calling
+pattern: the model picks from a registered set of tools (set timer, set alarm,
+get weather, calculate, volume, etc.), the gateway executes the tool, and the
+model wraps the result in natural language. The right shape is a **hybrid**:
+keep the fast deterministic intents for common phrasings (low latency, no
+model round trip, reliable), and add a tool-calling fallback for anything
+that doesn't match. Implemented incrementally — start with the two or three
+tools users actually need, evaluate reliability on a function-calling-capable
+model (Gemini works out of the box; Ollama needs `qwen2.5`, `llama3.1`, or
+`mistral-nemo` at 7B+), then add more.
+
+Known trade-offs to plan for:
+
+- **Reliability:** small local models (3B) mis-pick tools more often; 7B+ is
+  noticeably better. Keep deterministic intents for anything safety- or
+  device-affecting so a wrong tool call cannot change volume, mute the
+  device, or set the wrong alarm.
+- **Latency:** one extra round trip (~1 s on Ollama 7B, ~0.5 s on Gemini)
+  vs. the instant deterministic path. Acceptable for non-common requests.
+- **Offline:** works fully offline with Ollama + a function-calling model;
+  not all 3B models support it. Document which model is required.
+- **Safety:** never let the model directly produce a device action — always
+  go through a registered tool whose arguments the gateway validates. The
+  tool's return value is what the model narrates, so it cannot claim an
+  action succeeded without a real device result.
+- **Discoverability:** the model only uses tools it knows about. Add a clear
+  tool list to the system prompt so it can pick correctly.
+
+- [ ] Define a small initial tool set (set timer, set alarm, get weather,
+      calculate, get status) and a strict argument schema.
+- [ ] Wire tool-calling into the LLM path: keep deterministic intents as the
+      fast path, add a tool-calling fallback for non-matching requests.
+- [ ] Validate every tool argument server-side; reject invalid calls with a
+      clear model-readable error so it can correct itself.
+- [ ] Document the required model capability (function-calling) and recommend
+      a default Ollama model for the offline path.
+- [ ] Add a way for Ember to narrate that it used a tool ("I set a 7:00 AM
+      alarm on the device") so the user knows the action really happened.
+
 ## Priority 4 — Local control, maintenance, and reliability
 
 - [ ] Local status/configuration web interface.
