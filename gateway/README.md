@@ -118,6 +118,11 @@ with `timedatectl` after installation.
 | "Set the volume to N" | Action `volume=N` for the device to clamp to 0–100 |
 | "Turn it up / down" | Relative step action `volume=+10` / `volume=-10` |
 | Status | Local device-fact answer from the Fire's `X-Ember-Device-Status` header |
+| "Search the web for X" / "look up X" | Grounded answer from DuckDuckGo Instant Answer results |
+| Weather / temperature / rain questions | Current conditions from Open-Meteo at the configured location |
+| "Set a timer for 5 minutes" / "remind me" | Named per-device timer announced on the next turn |
+| "What timers are active?" | List of pending per-device timers |
+| "Cancel my timers" | Removes the device's pending timers |
 
 Volume intents resolve deterministically in the gateway: absolute requests pass the
 target level and relative ones pass a fixed ±10 step, so the Fire owns the current

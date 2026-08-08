@@ -472,6 +472,31 @@ pio device monitor --port COMxx --baud 115200
   `setVolumePercent`), persist to NVS, and report device status facts (Wi-Fi,
   battery, mute, free storage, firmware version). Not started.
 
+## 2026-08-08 status (Priority 3 slice 3: gateway tools, gateway 0.5.0)
+
+- Added deterministic, unit-tested gateway tools in `gateway/ember_gateway/`:
+  - `search.py` — `WebSearchClient` (DuckDuckGo Instant Answer API): returns an
+    answer/abstract and sources; `grounding_text()` renders facts for the model.
+    `handle_search` grounds the reply: on success it feeds the results+question
+    to the conversation provider; on HTTP/empty failures it returns a clear
+    apology instead of hallucinating.
+  - `weather.py` — `WeatherClient` (Open-Meteo forecast) + `Weather.describe()`
+    renders current condition, temperature, wind, and place deterministically.
+    Configured via `EMBER_WEATHER_LAT/LON/PLACE`; lat/lon 0,0 disables.
+  - `timers.py` — `TimerStore`: in-memory per-device timers (label + deadline),
+    `add` (bounded, max 12), `list`, `cancel`, and `due` (removes elapsed timers).
+    Due timers announce on the device's next voice turn (push-to-talk constraint).
+- `commands.py`: new intents — `search` ("search the web for X", "look up X"),
+  `weather` (weather/forecast/temperature/rain/sun/cold questions), `timer`
+  ("set a timer for 5 minutes" / "remind me in N to X"), `timer-list`, and
+  `timer-cancel`. Search runs before weather so "look up the weather in London"
+  resolves to a search. Timer regex now matches plural "timers".
+- `main.py`: wires `handle_search`, `handle_weather`, and the timer handlers into
+  `/v1/voice`; due-timer announcements are prepended to the next reply.
+- `.env.example`: documents the three weather variables.
+- Gateway version `0.5.0`; 53 tests passing locally. See `opencode_update.md`.
+- Next slice: deterministic calculations and unit conversions in the gateway.
+
 ## 2026-08-08 status (Priority 3 slice 2: Fire volume + status, firmware 0.11.1)
 
 - Fire `0.11.1-volume-status`: `AudioFeedback::setVolumePercent` re-added;

@@ -344,3 +344,39 @@ MULTI_TURN_DEPLOY_VERIFY status note, and this log. File cleanup: renamed
   matches battery/Wi-Fi/storage/firmware/levels intents, renders `sd_free_mb`, and
   omits `na` values. REMEMBER: the Pi must be updated (`sudo ./scripts/update-pi.sh`)
   after every gateway change; the running stack was last built before slices 1-2.
+
+## 2026-08-08 (continued) — Priority 3 slice 3: gateway tools (search / weather / timers)
+
+- New `gateway/ember_gateway/search.py`: `WebSearchClient` calls the DuckDuckGo
+  Instant Answer API (`api.duckduckgo.com`) with `format=json&no_html=1&skip_disambig=1`.
+  Returns a `SearchResult` (query, answer, abstract, abstract_url, sources);
+  `grounding_text()` renders a facts snippet for the model (empty when nothing real).
+  HTTP errors surface as `httpx.HTTPError` so the handler can apologize honestly.
+- New `gateway/ember_gateway/weather.py`: `WeatherClient` calls the Open-Meteo
+  forecast API; `Weather.describe()` is entirely deterministic (condition from WMO
+  code, temperature, apparent temp, wind km/h, place). Config via `EMBER_WEATHER_LAT`,
+  `EMBER_WEATHER_LON`, `EMBER_WEATHER_PLACE`; lat/lon 0,0 disables the handler.
+- New `gateway/ember_gateway/timers.py`: `TimerStore` is in-memory, per-device,
+  bounded (`max_timers=12`). `add`, `list`, `cancel`, `due`. Elapsed timers are
+  removed; the gateway announces them on the device's next voice turn (the Fire is
+  push-to-talk, so the gateway cannot spontaneously push an alarm without polling).
+- `commands.py` intents: `_match_search` (search/look up/google/find out/check what/
+  look into), `_match_weather` (weather/forecast/temperature/rain/snow/sun/cloudy/
+  hot/cold/what's it like outside), `_match_timer` durations incl. number words
+  ("five minutes"), labels ("to stretch"), plus `timer-list` ("what timers are
+  active") and `timer-cancel`. Search precedes weather so "look up the weather" is
+  a search. `_match_timer` now matches plural "timers".
+- `main.py`: module-level `search`, `weather`, `timers` singletons; handlers
+  `handle_search`, `handle_weather`, `handle_timer_schedule/list/cancel`;
+  due-timer announcement prepended to the reply text before synthesis.
+- Gateway version bumped to `0.5.0`. Commit `3044b96` on `oc-updates`.
+- Tests: 53 pass (`test_tools.py` added: WebSearchClient parsing/grounding/HTTP
+  error, Weather.describe, TimerStore lifecycle/isolation/bounds; `test_commands.py`
+  expanded with search/look-up/timer/timer-list/timer-cancel/weather intents).
+- Docs updated: TODO.md (time/timers checked off, weather + web search done, next
+  slice = calculations/unit conversions), PROJECT_PROGRESS.md (slice 3 note),
+  gateway/README.md (command table rows), `.env.example` (weather vars),
+  this log.
+- REMINDER: the running Pi stack still predates slices 1-3; update with
+  `sudo ./scripts/update-pi.sh` before live testing these tools.
+- Next slice: deterministic calculations and unit conversions in the gateway.

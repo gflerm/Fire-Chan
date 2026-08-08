@@ -93,8 +93,9 @@ Acceptance criteria:
 
 ### Time, timers, and reminders
 
-- [ ] Add deterministic date, day, and timezone answers.
-- [ ] Create, list, cancel, pause, resume, and name timers.
+- [x] Add deterministic date, day, and timezone answers.
+- [x] Create, list, cancel, and name timers.
+- [ ] Pause and resume timers.
 - [ ] Add reminders with persistent storage and clear confirmation of interpreted time.
 - [ ] Provide alarm ringing, snooze, dismiss, and missed-reminder behavior.
 - [ ] Survive restart, Wi-Fi loss, and Pi downtime without losing committed reminders.
@@ -102,7 +103,9 @@ Acceptance criteria:
 
 ### Information and utility
 
-- [ ] Add local weather only after location consent and a clearly selected data source.
+- [x] Add local weather only after location consent and a clearly selected data source.
+      (Open-Meteo, configured lat/lon/place via env; lat/lon 0,0 disables answers.)
+- [x] Add grounded web search answers from DuckDuckGo results.
 - [ ] Add basic calculations and unit conversions through deterministic tools.
 - [ ] Provide calendar integration only as an optional, separately authorized feature.
 - [ ] Add configurable morning/evening summaries with a physical or web disable control.
