@@ -1,18 +1,21 @@
 # Fire-chan Project Brief
 
-**Version:** 0.1  
-**Target:** M5Stack Fire v2.5  
-**Purpose:** Stationary Stack-chan-inspired desktop companion  
+**Version:** 0.1
+**Target:** M5Stack Fire v2.5
+**Purpose:** Stationary, Stack-chan-inspired desktop companion
 **Excluded:** Camera and servo movement
 
-**Implementation status (2026-08-04):** The hardware baseline, animated face,
-event-driven behavior, persistent configuration, push-to-talk recording, and a fully
-local Ember voice round trip are operational on the physical Fire v2.5. Firmware
-`0.9.0-assistant-directives` uses a Raspberry Pi 5 for local STT, conversation, and
-TTS, and applies returned expression, sleep, wake, mute, and unmute hints. The known
-PSRAM fault is non-blocking because core features use bounded internal-RAM buffers.
-The active backlog is maintained in `TODO.md`; detailed evidence is in
-`PROJECT_PROGRESS.md`.
+**Implementation status (2026-08-08):** Hardware baseline, animated face,
+event-driven behavior, persistent configuration, push-to-talk, and a fully
+local Ember voice round trip are operational. **Firmware `0.12.0-alarm-ringing`**
+adds device-ringing alarms: an alarm set on the Pi is handed to the Fire as
+a Unix deadline (NTP-synced) and fires a 3-second buzzer with the Alarmed
+expression, dismissable with Button B. **Gateway `0.7.2`** serves canonical
+8 kHz WAV replies, deterministic local commands (time, status, help, volume,
+timers, alarms, weather, web search, calculations, unit conversions), and
+graceful "didn't catch that" replies on empty transcripts. The known PSRAM
+fault is non-blocking because core features use bounded internal-RAM buffers.
+The active backlog is in `TODO.md`; detailed evidence is in `PROJECT_PROGRESS.md`.
 
 ---
 
@@ -20,7 +23,7 @@ The active backlog is maintained in `TODO.md`; detailed evidence is in
 
 Fire-chan is a compact desktop companion built around the M5Stack Fire v2.5.
 
-It should retain the useful interactive features of Stack-chan while remaining stationary:
+It keeps the useful interactive features of Stack-chan while staying stationary:
 
 - Animated face
 - Emotional expressions
@@ -32,10 +35,10 @@ It should retain the useful interactive features of Stack-chan while remaining s
 - microSD assets and configuration
 - Local web control
 - HTTP and optional MQTT integration
-- Timers, reminders, and notifications
+- Timers, reminders, alarms, and notifications
 - Optional cloud speech and AI features
 
-The device should remain useful even without internet access.
+The device must remain useful even without internet access.
 
 ---
 
@@ -45,14 +48,14 @@ The device should remain useful even without internet access.
 
 - Animated eyes, blinking, gaze, mouth, and expressions
 - Three-button interaction
-- IMU reactions such as tilt, shake, pickup, and face-down mute
+- IMU reactions (tilt, shake, pickup, face-down)
 - Sound playback from microSD
 - RGB state indicators
 - Wi-Fi setup and automatic reconnect
 - Local web interface
 - HTTP command API
 - NTP time synchronization
-- Timers and reminders
+- Timers, alarms, and reminders
 - Configuration persistence
 - OTA firmware updates
 - Offline operation for core functions
@@ -60,13 +63,14 @@ The device should remain useful even without internet access.
 ### Planned or in progress
 
 - Push-to-talk microphone recording — implemented
-- Local speech-to-text on Raspberry Pi — implemented
-- Local command routing — partially implemented
-- Text-to-speech — implemented with Ember's local Piper voice
-- Local AI conversation — implemented; multi-turn memory remains
+- Local speech-to-text on Raspberry Pi — implemented (whis.cpp `base.en`)
+- Local command routing — implemented
+- Text-to-speech — implemented (Piper `en_GB-alba-medium`)
+- Local AI conversation — implemented (Ollama `llama3.2:3b`; optional Gemini)
 - MQTT and Home Assistant integration
 - Personality profiles
 - Custom avatar and sound packs
+- Streaming early-start playback — _attempted, rolled back_
 
 ### Excluded
 
@@ -75,24 +79,16 @@ The device should remain useful even without internet access.
 - Servo movement
 - Pan and tilt
 - Continuous local AI model
-- Continuous listening in the first version
+- Continuous listening in v0.1
 
 ---
 
 ## 3. Recommended Technology
 
-Use:
-
-- PlatformIO
-- Arduino framework
-- M5Unified
-- M5GFX
-- FreeRTOS
-- ArduinoJson
-- ESP32 Wi-Fi and HTTP libraries
-- Optional MQTT and audio libraries
-
-The project should use an event-driven design with separate modules for hardware, animation, audio, networking, storage, reminders, and assistant functions.
+PlatformIO, Arduino framework, M5Unified, M5GFX, FreeRTOS, ArduinoJson, ESP32
+Wi-Fi and HTTP libraries. Optional MQTT and audio libraries. The project is
+event-driven with separate modules for hardware, animation, audio, networking,
+storage, reminders, and assistant functions.
 
 ---
 
@@ -106,7 +102,7 @@ flowchart LR
     Face[Face Engine]
     Audio[Audio Manager]
     Network[Network Manager]
-    Reminders[Reminder Manager]
+    Reminders[Reminder and Alarm Manager]
     Storage[Configuration and Assets]
 
     Inputs --> Events
@@ -121,9 +117,7 @@ flowchart LR
     Storage --> Network
 ```
 
-Main rule:
-
-> Network, storage, and audio operations must not freeze the animated face.
+Main rule: network, storage, and audio operations must not freeze the face.
 
 ---
 
@@ -131,266 +125,144 @@ Main rule:
 
 ```text
 src/
-├── app/
-├── hardware/
-├── face/
-├── input/
-├── audio/
-├── network/
-├── reminders/
-├── storage/
-├── assistant/
-└── ui/
+├── app/           # Application, EventBus, BehaviorEngine
+├── hardware/      # RGB feedback
+├── face/          # Face engine, eyes, mouth, expressions, animation
+├── input/         # Buttons, IMU gestures
+├── audio/         # Audio feedback, response player
+├── network/       # Wi-Fi, NTP
+├── storage/       # NVS, microSD backup
+├── assistant/     # Voice gateway client, directive parser
+├── alarm/         # Local alarm manager (NTP-synced, 3 s buzzer)
+└── ui/            # Optional web UI
 ```
-
-Key modules:
-
-- Hardware abstraction
-- Event bus
-- Behavior engine
-- Face engine
-- Input manager
-- Audio manager
-- Network manager
-- Reminder manager
-- Configuration manager
-- Optional assistant manager
 
 ---
 
 ## 6. Interaction Model
 
-Suggested button mapping:
+Button mapping:
 
 | Input | Action |
 |---|---|
-| Button A | Push-to-talk or acknowledge |
-| Button B | Menu or confirm |
-| Button C | Cancel, mute, or back |
-| Long press | Settings or alternate action |
-| Button combination | Safe mode or reset |
+| Button A (hold) | Push-to-talk |
+| Button A (tap) | Dismiss ringing alarm |
+| Button B (tap) | Next expression; or dismiss ringing alarm |
+| Button B (hold) | Reset to neutral |
+| Button C (tap) | Toggle demo / manual |
+| Button C (hold) | Mute / unmute |
+| Tilt | Move pupils |
+| Shake | Temporary confused reaction |
+| Pick up | Temporary surprised reaction |
+| Face down | Sleeping expression |
 
-Suggested IMU actions:
+Voice intents (handled locally before any LLM call):
 
-- Tilt: move pupils
-- Shake: dismiss alarm
-- Pick up: surprised reaction
-- Face down: mute or sleep
-- Inactivity: sleepy state
+- Time, date, status, help, repeat
+- Sleep, wake, mute, unmute
+- Set / list / cancel timers
+- Set / list / dismiss alarms (device rings at the set time)
+- Weather, web search, calculations, unit conversions
+- Volume change
 
 ---
 
 ## 7. Face States
 
-Initial expressions:
-
-- Neutral
-- Happy
-- Sad
-- Surprised
-- Confused
-- Sleepy
-- Sleeping
-- Listening
-- Thinking
-- Speaking
-- Alarm
-- Offline
-- Error
+Expressions: Neutral, Happy, Excited, Sad, Surprised, Confused, Sleepy,
+Sleeping, Listening, Thinking, Speaking, Alarmed, Offline, Error.
 
 State priority:
 
 ```text
 Error
-> Alarm
-> OTA update
-> Active interaction
-> Listening or speaking
-> Temporary expression
-> Idle behavior
+> Alarm (active ringing)
+> Face-down / sleeping
+> Speaking
+> Listening / thinking
+> Temporary reaction
+> Offline
+> Base state
 ```
 
 ---
 
 ## 8. Voice Workflow
 
-The first version should use push-to-talk.
+Push-to-talk. Local commands resolve before any LLM call. The gateway serves
+8 kHz canonical WAV replies; the Fire downloads, caches, and plays. Alarms
+ring from the device, not the gateway.
 
 ```text
-Press button
-→ record speech
-→ speech-to-text
-→ local command or AI service
-→ text response
-→ text-to-speech
-→ play audio with mouth animation
+Press A
+→ record 16 kHz WAV to microSD
+→ POST /v1/voice (with device status header)
+→ gateway: whisper STT → local command or LLM → Piper TTS → 8 kHz WAV
+→ Fire downloads /cache/ember_response.wav
+→ face = Speaking, mouth animates
+→ if reply includes alarm_time: persist to NVS, schedule local 3 s alarm
+→ at alarm time: local buzzer + Alarmed expression, dismissable with B
 ```
-
-Local commands should be handled before sending requests to an AI service.
-
-Examples:
-
-- Set timer
-- Cancel timer
-- Change expression
-- Adjust volume
-- Report status
-- Trigger sound
-- Run smart-home action
 
 ---
 
 ## 9. Networking
 
-Required network features:
-
-- Wi-Fi provisioning
-- Automatic reconnect
+- Wi-Fi provisioning (current: `include/secrets.h`; next: captive portal)
+- Automatic reconnect with backoff
 - Offline mode
-- Local web interface
-- HTTP API
-- OTA updates
-
-Example API actions:
-
-```text
-GET  /api/status
-POST /api/expression
-POST /api/speak
-POST /api/sound
-POST /api/timer
-POST /api/reminder
-POST /api/volume
-POST /api/mute
-POST /api/restart
-```
-
-MQTT can be added later for Home Assistant and external automation.
+- Local web interface (planned)
+- HTTP API (planned)
+- OTA updates (planned)
 
 ---
 
 ## 10. Storage
 
-Use internal storage for:
-
-- Essential settings
-- Device state
-- Safe-mode flags
-
-Use microSD for:
-
-- Face assets
-- Sound files
-- Web UI files
-- Personality profiles
-- Logs
-- Cached speech
-- Configuration backups
-
-The device must boot safely without an SD card.
+Internal (NVS) for essential settings: device id, volume, mute, display,
+gesture, sleep, demo, max recording, **alarm deadline and label**, schema
+version. microSD for face assets, sound files, web UI, logs, cached speech,
+and `/config/device.json` backup. The device must boot safely without an
+SD card.
 
 ---
 
 ## 11. Development Roadmap
 
-### Phase 0 — Setup
+### Phase 0 — Setup ✅
 
-- Create repository
-- Configure PlatformIO
-- Add M5Unified and M5GFX
-- Confirm build and upload
-- Add logging and versioning
+### Phase 1 — Hardware diagnostics ✅
 
-### Phase 1 — Hardware diagnostics
+### Phase 2 — Animated face ✅
 
-Test:
+### Phase 3 — Inputs and behavior ✅
 
-- Display
-- Buttons
-- Speaker
-- Microphone
-- IMU
-- RGB LEDs
-- microSD
-- Wi-Fi
-- Battery information
-- PSRAM and memory
+### Phase 4 — Audio (playback, expression cues) ✅
 
-### Phase 2 — Animated face
+### Phase 5 — Connectivity (Wi-Fi provisioning + OTA) — in progress
 
-- Eyes
-- Blinking
-- Gaze
-- Mouth
-- Expressions
-- Idle animation
-- Non-blocking rendering
+### Phase 6 — Time, timers, alarms
 
-### Phase 3 — Inputs and behavior
+- Timers and reminders ✅
+- NTP time synchronization ✅
+- Alarm ringing on device ✅
+- Snooze and missed-reminder behavior — outstanding
+- Pause / resume timers — outstanding
 
-- Button events
-- IMU gestures
-- Event bus
-- Behavior state machine
-- Sleep and wake behavior
+### Phase 7 — Smart home (MQTT, Home Assistant) — outstanding
 
-### Phase 4 — Audio
-
-- Sound playback
-- Volume and mute
-- Alarm sounds
-- Mouth animation during speech
-
-### Phase 5 — Connectivity
-
-- Wi-Fi provisioning
-- Web UI
-- HTTP API
-- OTA
-- Status reporting
-
-### Phase 6 — Time and reminders
-
-- NTP
-- Timers
-- Reminders
-- Persistence
-- Snooze and dismiss
-
-### Phase 7 — Smart home
-
-- MQTT
-- Home Assistant
-- External notifications
-
-### Phase 8 — Voice assistant
-
-- Push-to-talk
-- Speech-to-text
-- Local command routing
-- AI integration
-- Text-to-speech
+### Phase 8 — Voice assistant ✅ (streaming early-start playback rolled back)
 
 ---
 
 ## 12. First Milestone
 
-The first meaningful milestone is:
+> Fire-chan boots, shows an animated face, reacts to buttons and tilt,
+> plays a sound, detects the SD card, connects to Wi-Fi, and remains stable.
 
-> Fire-chan boots, shows an animated face, reacts to buttons and tilt, plays a sound, detects the SD card, connects to Wi-Fi, and remains stable.
-
-Recommended first coding session:
-
-1. Create the PlatformIO project.
-2. Initialize M5Unified.
-3. Show firmware version.
-4. Test all three buttons.
-5. Draw simple eyes.
-6. Add non-blocking blinking.
-7. Move pupils using IMU tilt.
-8. Trigger expressions from buttons.
-9. Play a sound.
-10. Initialize the SD card and Wi-Fi.
+This has been met. The current milestone is the closed assistant loop
+(push-to-talk → reply → expression/audio) with multi-turn memory and a
+device-ringing alarm.
 
 ---
 
@@ -400,14 +272,14 @@ Recommended first coding session:
 |---|---|
 | Fire v2.5 hardware differences | Verify components and pin mappings first |
 | Existing Stack-chan firmware not portable | Build a Fire-specific hardware layer |
-| Network operations freeze UI | Use separate tasks and timeouts |
-| Audio quality or conflicts | Test early and allow external audio later |
-| Memory fragmentation | Use fixed buffers and monitor heap |
-| SD card failure | Include built-in fallback assets |
-| Gesture false triggers | Use filtering and cooldowns |
-| Incorrect reminder time | Track NTP sync and consider an RTC |
+| Network operations freeze UI | Separate tasks and timeouts |
+| Audio quality or conflicts | Test early, allow external audio later |
+| Memory fragmentation | Fixed buffers, monitor heap |
+| SD card failure | Built-in fallback assets |
+| Gesture false triggers | Filtering and cooldowns |
+| Incorrect alarm time | NTP sync + relative Unix deadline |
 | API key exposure | Never hard-code secrets |
-| Project scope becomes too large | Follow the phased roadmap |
+| Streaming playback lockup | Stay on download-then-play until serial-captured failure is fixed |
 
 ---
 
@@ -420,7 +292,7 @@ Recommended first coding session:
 - Configuration format and location
 - OTA method
 - Long-term STT, TTS, and conversation model upgrade policy
-- Need for an external RTC
+- Need for an external RTC (currently NTP is sufficient)
 - Final repository name
 
 ---
@@ -437,6 +309,7 @@ Version 0.1 is complete when:
 - Sounds play correctly.
 - SD and Wi-Fi failures are handled safely.
 - The device runs continuously without obvious crashes or memory leaks.
+- Local voice round trip is stable; alarms ring on the device at the set time.
 
 ---
 
@@ -450,11 +323,12 @@ Hardware verification
 → input and behavior
 → local audio
 → Wi-Fi and web control
-→ reminders
+→ reminders and alarms
 → MQTT
 → voice and AI
 ```
 
 Do not begin with AI integration.
 
-The first priority is a stable, expressive, offline-capable companion with a clean modular architecture.
+The first priority is a stable, expressive, offline-capable companion with a
+clean modular architecture.

@@ -1,6 +1,16 @@
 # Future Hardware Upgrade: ESP32-P4 and Jetson Nano
 
-_Recorded: 6 August 2026_
+_Recorded: 6 August 2026; last refreshed 8 August 2026._
+
+## Current-state note (2026-08-08)
+
+The Raspberry Pi 5 path is now the production gateway. Firmware is
+`0.12.0-alarm-ringing`; gateway is `0.7.2`. The download-then-play path
+remains the only verified audio path. Streaming early-start playback was
+attempted twice (`0.12.0-stream-play`, `0.12.0-stream-3buf`) and rolled back
+(red error, then Speaking-state lockup). Any retry must capture the failure
+on serial first; the architectural case for PSRAM-backed ring-buffer streaming
+on a P4 (below) is unchanged.
 
 ## Summary
 

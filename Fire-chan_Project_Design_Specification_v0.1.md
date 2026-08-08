@@ -6,14 +6,19 @@
 **Project type:** Stationary, open-source desktop companion  
 **Date:** 2026-08-04
 
-> **Living-document update — 2026-08-04:** The first hardware milestone and the
-> local voice-assistant path have been implemented on the physical target. Current
-> firmware is `0.9.0-assistant-directives`; Ember runs fully locally through a
-> Raspberry Pi 5 using whisper.cpp, Ollama, and Piper. Push-to-talk, streamed reply
-> playback, expression hints, and sleep/wake/mute/unmute actions work without PSRAM.
-> PSRAM remains a separate hardware finding rather than a core requirement. See
-> `PROJECT_PROGRESS.md`, `DECISIONS.md`, and `TODO.md` for verified results and the
-> active implementation backlog.
+> **Living-document update — 2026-08-08:** Hardware baseline, animated face,
+> event-driven behavior, persistent configuration, push-to-talk, and a fully
+> local Ember voice round trip are operational on the physical target. Current
+> firmware is `0.12.0-alarm-ringing`; gateway is `0.7.2`. Ember runs fully
+> locally through a Raspberry Pi 5 using whisper.cpp, Ollama, and Piper; an
+> optional Gemini path falls back to Ollama on any failure. Push-to-talk,
+> downloaded-then-played reply audio, expression hints, sleep/wake/mute/unmute
+> actions, and device-ringing alarms (3-second buzzer at the set time) work
+> without PSRAM. Streaming early-start playback was attempted twice
+> (0.12.0-stream-play, 0.12.0-stream-3buf) and rolled back; the known-good
+> path is download-then-play. PSRAM remains a separate hardware finding rather
+> than a core requirement. See `PROJECT_PROGRESS.md`, `DECISIONS.md`, and
+> `TODO.md` for verified results and the active implementation backlog.
 
 ---
 

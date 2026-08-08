@@ -1,76 +1,70 @@
 # Fire-chan
 
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[License](LICENSE)  ·  v0.12.0-alarm-ringing (firmware) / 0.7.2 (gateway)
 
-Fire-chan is a stationary, Stack-chan-inspired desktop companion built for the
-M5Stack Fire v2.5. The project combines an expressive animated face, buttons,
-IMU gestures, RGB lighting, local audio, and a privacy-friendly voice assistant
-named Ember—without a camera or servo movement.
+A stationary, Stack-chan-inspired desktop companion on the M5Stack Fire v2.5
+with a privacy-first local voice assistant named **Ember**. No camera, no servos.
 
-## Current status
+## What's working
 
-Firmware `0.11.0-download-conn` is running on the physical device.
+- Animated face (14 expressions, blink, gaze, mouth)
+- Buttons and IMU gestures via an event-driven behavior engine
+- Push-to-talk voice capture at 16 kHz / 16-bit mono
+- Local voice stack on a Raspberry Pi 5: whisper.cpp `base.en`, Ollama
+  `llama3.2:3b`, Piper `en_GB-alba-medium`; optional Gemini with Ollama fallback
+- Deterministic local commands: time, date, status, help, repeat, volume,
+  sleep/wake, mute/unmute, timers, alarms, weather, web search, calculations,
+  unit conversions
+- Timers and alarms on the Fire:
+  - **Timers** are announced on the next push-to-talk turn when due
+  - **Alarms** fire locally: a 3-second buzzer at the set time with the
+    Alarmed expression; dismissed with Button B (or hold A to talk over it)
+- NTP-synced clock for absolute alarm times (survives reboot via NVS)
+- 8 kHz canonical WAV replies on the Pi to cut response bytes ~3.5x
+- Accepted speech output level 141
+- Persistent NVS config with microSD backup
+- Gateway auth, history per device, no-speech handled gracefully (no error face)
 
-- Animated face with 14 expressions, blinking, gaze, and speaking animation
-- Button and IMU interactions through a modular event-driven behavior engine
-- Persistent configuration in NVS with microSD backup
-- Push-to-talk 16 kHz voice recording
-- Local STT and TTS on a Raspberry Pi 5, with local Ollama conversation by default
-- Optional low-latency Gemini conversation with automatic Ollama fallback
-- Streamed response playback without requiring PSRAM
-- Ember-driven expressions and sleep, wake, mute, and unmute actions
-- Accepted speech output level of 141
+## Known limitations / outstanding goals
 
-The M5Stack's PSRAM currently fails its boot-time hardware test, but PSRAM is
-optional: the implemented face, voice, networking, and playback features use
-bounded internal-RAM buffers and remain operational.
-
-## Voice stack
-
-The Raspberry Pi gateway keeps voice processing on the local network:
-
-- whisper.cpp `base.en` for speech recognition
-- Ollama `llama3.2:3b` for private local conversation
-- Optional Gemini `gemini-3.5-flash-lite` for faster cloud conversation
-- Piper `en_GB-alba-medium` for Ember's voice
-- FastAPI gateway for authentication, local commands, and response audio
-
-No cloud AI account is required. Gemini is opt-in; only transcribed prompt text is sent
-to Google, while speech recognition and voice generation remain on the Pi.
+- **Streaming early-start playback** — 0.12.0-stream-play / 0.12.0-stream-3buf
+  both rolled back (red error, then lockup). Known-good: download-then-play.
+- **Alarm snooze and missed-reminder behavior** — ringing + dismiss done; snooze
+  and missed handling not yet implemented.
+- **Device-friendly Wi-Fi provisioning** — the device is provisioned via
+  `include/secrets.h` (gitignored). The captive-portal flow is the next big
+  priority.
+- **PSRAM** — boot-time test fails on this Fire v2.5; not required because all
+  buffers are bounded internal RAM.
+- **Stability / overnight runs** — short runs are clean, but multi-day tests
+  and voice cancellation are not yet verified.
 
 ## Build and upload
 
-The project uses PlatformIO with the Arduino framework:
-
-```powershell
+```bash
+# (PowerShell on Windows, replace COMxx with your port)
 pio run
-pio run --target upload --upload-port COMXX
-pio device monitor --port COMXX --baud 115200
+pio run --target upload --upload-port COM5
+pio device monitor --port COM5 --baud 115200
 ```
 
-Copy `include/secrets.example.h` to `include/secrets.h` and enter local network
-and gateway credentials. The real secrets file is ignored by Git and must never
-be committed.
+Copy `include/secrets.example.h` to `include/secrets.h` and fill in the
+local network and gateway token. The real secrets file is gitignored and must
+never be committed.
 
 ## Documentation
 
-- `Fire-chan_Project_Brief_v0.1.md` — objective and scope
-- `Fire-chan_Project_Design_Specification_v0.1.md` — detailed design
-- `PROJECT_PROGRESS.md` — verified implementation and hardware results
+- `Fire-chan_Project_Brief_v0.1.md` — goal and scope
+- `Fire-chan_Project_Design_Specification_v0.1.md` — design
+- `future-upgrade.md` — next hardware platform (ESP32-P4)
 - `TODO.md` — prioritized development roadmap
-- `DECISIONS.md` — architecture decisions
-- `gateway/README.md` — Raspberry Pi installation and operation
+- `THIRD_PARTY_NOTICES.md` — third-party licenses
+- `LICENSE` — Apache 2.0
 
-The next milestones focus on multi-turn conversation, voice interruption, and
-extended stability testing. Streamed early-start playback was attempted twice and
-rolled back both times (red error, then a Speaking-state lockup); the known-good
-download-then-play path remains. The Raspberry Pi gateway serves 8 kHz canonical
-WAV replies (`EMBER_AUDIO_RATE_HZ=8000`), cutting response bytes ~3.5x.
+The detailed change log, slice notes, and deployment instructions live in
+`opencode_update.md`, `PROJECT_PROGRESS.md`, and `gateway/README.md`.
 
 ## License
 
-Fire-chan's original code and documentation are licensed under the
-[Apache License 2.0](LICENSE), copyright 2026 gflerm. Third-party libraries,
-tools, models, and voice assets retain their own licenses; see
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) before redistributing source,
-firmware binaries, models, or prepared Raspberry Pi images.
+Apache 2.0. See `THIRD_PARTY_NOTICES.md` for third-party library, model,
+and voice-asset licenses before redistributing.
