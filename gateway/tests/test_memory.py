@@ -44,6 +44,23 @@ class SessionStoreTests(unittest.TestCase):
         self.assertIn({"role": "user", "content": "one-user"}, history_one)
         self.assertNotIn({"role": "user", "content": "two-user"}, history_one)
 
+    def test_last_reply_returns_most_recent_assistant_turn(self):
+        store = SessionStore()
+        store.append("dev", "first user", "first assistant")
+        store.append("dev", "second user", "second assistant")
+        self.assertEqual(store.last_reply("dev"), "second assistant")
+
+    def test_last_reply_none_for_fresh_session(self):
+        store = SessionStore()
+        self.assertIsNone(store.last_reply("dev"))
+        self.assertIsNone(store.last_reply("missing"))
+
+    def test_last_reply_none_after_clear(self):
+        store = SessionStore()
+        store.append("dev", "user", "assistant")
+        store.clear("dev")
+        self.assertIsNone(store.last_reply("dev"))
+
 
 if __name__ == "__main__":
     unittest.main()

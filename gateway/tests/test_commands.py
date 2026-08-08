@@ -51,6 +51,35 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(choose_expression("That's wonderful!"), "excited")
         self.assertEqual(choose_expression("Would you like to try?"), "curious")
 
+    def test_help_command(self):
+        result = match_local_command("What can you do?")
+        self.assertIsNotNone(result)
+        self.assertEqual(result.action, "help")
+        self.assertIn("volume", result.reply)
+        self.assertIn("repeat", result.reply)
+
+    def test_repeat_marks_repeat_last(self):
+        result = match_local_command("Can you say that again?")
+        self.assertIsNotNone(result)
+        self.assertTrue(result.repeat_last)
+
+    def test_volume_absolute_target(self):
+        result = match_local_command("Set the volume to 40 percent")
+        self.assertEqual(result.action, "volume=40")
+        self.assertIn("40", result.reply)
+
+    def test_volume_absolute_clamped(self):
+        result = match_local_command("Set the volume to 150")
+        self.assertEqual(result.action, "volume=100")
+
+    def test_volume_up_step(self):
+        result = match_local_command("Turn it up")
+        self.assertEqual(result.action, "volume=+10")
+
+    def test_volume_down_step(self):
+        result = match_local_command("Make it quieter")
+        self.assertEqual(result.action, "volume=-10")
+
 
 if __name__ == "__main__":
     unittest.main()

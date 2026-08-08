@@ -67,3 +67,12 @@ class SessionStore:
     def clear(self, device_id: str) -> None:
         with self._lock:
             self._sessions.pop(device_id, None)
+
+    def last_reply(self, device_id: str, now: float | None = None) -> str | None:
+        """Return the most recent assistant reply for a device, or None."""
+        now = time.monotonic() if now is None else now
+        with self._lock:
+            session = self._session(device_id, now)
+            if session.turns:
+                return session.turns[-1]["assistant"]
+            return None

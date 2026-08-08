@@ -105,6 +105,12 @@ async def voice(
     if command:
         reply, expression, action = command.reply, command.expression, command.action
         reply_provider = "local-command"
+        if command.repeat_last:
+            previous = sessions.last_reply(device_id)
+            if previous:
+                reply, expression = previous, "neutral"
+            else:
+                reply = "There's nothing to repeat yet."
         if command.clear_session:
             sessions.clear(device_id)
         else:

@@ -457,3 +457,17 @@ pio device monitor --port COMxx --baud 115200
   reverted. 8 kHz canonical WAV plays fine; the failure is specific to the
   streaming builds.
 - Branch `oc-updates`; main untouched. See `opencode_update.md` for details.
+
+## 2026-08-08 status (Priority 3 slice 1: gateway commands, gateway 0.4.0)
+
+- Added deterministic gateway commands in `gateway/ember_gateway/commands.py`:
+  `help` ("What can you do?"), `repeat` (replays last reply via
+  `SessionStore.last_reply`), and volume intents (`volume=N` for absolute requests
+  clamped 0-100; `volume=+10` / `volume=-10` for relative steps). The Fire owns
+  the current level and clamps relative steps; all results are unit-tested.
+- `main.py` wires the repeat branch into `/v1/voice`; gateway version `0.4.0`.
+  25 tests passing. Docs: TODO.md (Priority 3 device/conversation-control items
+  updated), gateway/README (command table), opencode_update.md.
+- Remaining Priority 3 slice 2: apply `volume=...` actions on-device (re-add
+  `setVolumePercent`), persist to NVS, and report device status facts (Wi-Fi,
+  battery, mute, free storage, firmware version). Not started.

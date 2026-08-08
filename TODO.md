@@ -79,11 +79,15 @@ Acceptance criteria:
 
 ### Device and conversation control
 
+- [x] Offer concise help: “What can you do?”
+- [x] Repeat the last response.
+- [x] Change volume by intent or percentage with safe clamp to 0–100 (gateway-side
+      commands emit `volume=N` or relative `volume=+N`/`volume=-N` steps; device-side
+      application is point three slice two).
 - [ ] Report Wi-Fi, Pi connectivity, battery state, mute state, free storage, and firmware version.
-- [ ] Change volume by intent or percentage and provide safe minimum/maximum limits.
+- [ ] Apply a `volume=...` action on the device and persist it in NVS.
 - [ ] Change expression, play a named sound, sleep, wake, mute, and unmute.
-- [ ] Repeat the last response and stop speaking.
-- [ ] Offer concise help: “What can you do?”
+- [ ] Stop speaking.
 - [ ] Recognize uncertainty and say when a request cannot be completed.
 
 ### Time, timers, and reminders

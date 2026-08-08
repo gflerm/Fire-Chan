@@ -112,7 +112,17 @@ with `timedatectl` after installation.
 | Wake up | Audio restored if needed, then awake expression |
 | Mute | Spoken acknowledgement, then persistent mute |
 | Unmute | Persistent unmute before spoken acknowledgement |
+| "What can you do?" | Help listing capabilities, no other side effect |
+| "Say that again" / "repeat" | Last assistant reply replayed from device memory |
+| "Set the volume to N" | Action `volume=N` for the device to clamp to 0–100 |
+| "Turn it up / down" | Relative step action `volume=+10` / `volume=-10` |
 | Status | Local online-status response |
+
+Volume intents resolve deterministically in the gateway: absolute requests pass the
+target level and relative ones pass a fixed ±10 step, so the Fire owns the current level
+and clamps the result. Device-side application of `volume=` actions and status facts
+(Wi-Fi, battery, mute, storage, firmware) is tracked in the root `TODO.md` as
+Priority Three slice two.
 
 Multi-turn memory, timers, reminders, provisioning, and assistant interruption behavior
 are tracked in the root `TODO.md`.

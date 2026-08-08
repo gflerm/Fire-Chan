@@ -295,3 +295,22 @@ Docs updated: README, PROJECT_PROGRESS (last updated 2026-08-08), TODO.md
 MULTI_TURN_DEPLOY_VERIFY status note, and this log. File cleanup: renamed
 `future-enhancements.md.md` -> `future-enhancements.md` and `future-updgrade.md` ->
 `future-upgrade.md`.
+
+## 2026-08-08 (continued) — Priority 3 slice 1: gateway help / repeat / volume
+
+- Commands in `gateway/ember_gateway/commands.py`:
+  - `help` / "What can you do?" -> capability listing, `action="help"`.
+  - `repeat` / "Say that again" -> `repeat_last=True`; the handler replays the
+    newest stored assistant reply from `SessionStore.last_reply()`, or says there
+    is nothing to repeat yet.
+  - Volume intents: "set the volume to N" (clamped 0-100) -> `volume=N`;
+    "turn it up / louder" -> `volume=+10`; "turn it down / quieter" -> `volume=-10`.
+    The Fire owns the current level and clamps relative steps, keeping responses
+    deterministic and testable without device involvement.
+- `memory.py`: added `SessionStore.last_reply(device_id)`.
+- `main.py`: repeat path wired through the `/v1/voice` handler.
+- Gateway version bumped to `0.4.0`.
+- Tests: 25 pass (`test_commands` +5 help/repeat/volume, `test_memory` +3 last_reply,
+  plus existing). Run locally with `PYTHONPATH=gateway python -m unittest discover -s tests`.
+- Not committed yet; device-side application of `volume=` actions and status facts
+  remain Priority Three slice 2.
