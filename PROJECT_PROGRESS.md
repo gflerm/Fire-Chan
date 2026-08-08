@@ -3,11 +3,11 @@
 **Target:** M5Stack Fire v2.5  
 **Working directory:** `D:\projects\Fire-Chan`  
 **Diagnostic serial port:** `COMxx` at 115200 baud  
-**Last updated:** 2026-08-06
+**Last updated:** 2026-08-08
 
 ## Current milestone
 
-Phases 0–3 and the voice-assistant round trip are substantially complete. Fire-chan records prompts, sends them to the Raspberry Pi Ember gateway, plays the reply, and keeps the face responsive without PSRAM. Firmware `0.9.3-audio-download` retains the persistent Thinking-state correction and adds latency diagnostics plus bounded audio-download batching. The gateway now uses optional Gemini conversation with automatic Ollama fallback. Gemini is quick, but end-to-end latency remains subjectively slow and is the next optimization target. SD sound packs, alarm playback, Wi-Fi provisioning, and longer stability testing remain.
+Phases 0–3 and the voice-assistant round trip are substantially complete. Fire-chan records prompts, sends them to the Raspberry Pi Ember gateway, plays the reply, and keeps the face responsive without PSRAM. Firmware `0.11.0-download-conn` is the last known-good build. The gateway now uses optional Gemini conversation with automatic Ollama fallback and serves canonical 8 kHz WAV replies, cutting response bytes ~3.5x. Latency and audio-download throughput were isolated (network-window bound ~28 KB/s); two attempts at streamed early-start playback (firmware `0.12.0-stream-play` and `0.12.0-stream-3buf`) failed on-device and were rolled back. MicroSD sound packs, alarm playback, Wi-Fi provisioning, and longer stability testing remain.
 
 ## Completed
 
@@ -215,7 +215,7 @@ Face implementation modules:
 | Arduino ESP32 framework | 3.20017.241212 |
 | M5Unified | 0.2.19 |
 | Adafruit NeoPixel | 1.15.5 |
-| Firmware | `0.9.3-audio-download` |
+| Firmware | `0.11.0-download-conn` |
 | Static RAM use | 76,368 bytes (1.7%) |
 | Flash use | 1,083,097 bytes (16.5%) |
 | Build | PASS |
@@ -443,13 +443,17 @@ pio run --target upload --upload-port COMxx
 pio device monitor --port COMxx --baud 115200
 ```
 
-## 2026-08-07 status (scope B: latency)
+## 2026-08-08 status (scope B: latency)
 
-- Download is network-window bound ~28 KB/s (flat vs buffer size). Fixed the
-  earlier red error by serving canonical 44-byte PCM WAVs; 8 kHz replies now play
-  on-device and cut audio bytes ~3.5x / download ~2x. Kept on the Pi
-  (`EMBER_AUDIO_RATE_HZ=8000`).
-- Firmware 0.12.0-stream-play (early-start streaming) red-errored on device and
-  was reverted; firmware source restored to 0.11.0-download-conn (commit 557bf12).
-  Streaming re-attempt needs a serial capture of the error first.
+- Firmware `0.11.0-download-conn` (commit 557bf12) remains the known-good device
+  build. `EMBER_AUDIO_RATE_HZ=8000` canonical-header resampler stays on the Pi.
+- Volume is tunable at runtime via a serial `volume [0-100]` command (added for
+  the 0.12.0-stream experiment and reverted with it).
+- Streaming v2 (`0.12.0-stream-3buf`, commit 7aed648) built and flashed clean but
+  the first real audio turn LOCKED UP on-device: face stuck `Speaking`, no audio,
+  no key response; earlier turns only used the file path. Rolled back via
+  `git revert` (c63983d). Re-attempt only after capturing the failure on serial.
+- Streaming v1 (`0.12.0-stream-play`) previously red-errored on device and was
+  reverted. 8 kHz canonical WAV plays fine; the failure is specific to the
+  streaming builds.
 - Branch `oc-updates`; main untouched. See `opencode_update.md` for details.

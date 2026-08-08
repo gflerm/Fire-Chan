@@ -9,7 +9,7 @@ named Ember—without a camera or servo movement.
 
 ## Current status
 
-Firmware `0.9.3-audio-download` is running on the physical device.
+Firmware `0.11.0-download-conn` is running on the physical device.
 
 - Animated face with 14 expressions, blinking, gaze, and speaking animation
 - Button and IMU interactions through a modular event-driven behavior engine
@@ -61,8 +61,11 @@ be committed.
 - `DECISIONS.md` — architecture decisions
 - `gateway/README.md` — Raspberry Pi installation and operation
 
-The next milestone focuses on device-friendly Wi-Fi provisioning, multi-turn
-conversation, voice interruption, and extended stability testing.
+The next milestones focus on multi-turn conversation, voice interruption, and
+extended stability testing. Streamed early-start playback was attempted twice and
+rolled back both times (red error, then a Speaking-state lockup); the known-good
+download-then-play path remains. The Raspberry Pi gateway serves 8 kHz canonical
+WAV replies (`EMBER_AUDIO_RATE_HZ=8000`), cutting response bytes ~3.5x.
 
 ## License
 

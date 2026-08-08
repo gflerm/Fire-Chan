@@ -2,10 +2,12 @@
 
 **Created:** 2026-08-04
 
-**Current firmware:** `0.9.3-audio-download`
+**Current firmware:** `0.11.0-download-conn`
 
 **Current gateway experiment:** Optional Gemini `gemini-3.5-flash-lite` conversation
-with minimal thinking and automatic Ollama fallback; live Pi benchmark pending.
+with minimal thinking and automatic Ollama fallback; 8 kHz canonical WAV replies
+(`EMBER_AUDIO_RATE_HZ=8000`) active on the Pi. Streaming early-start playback
+attempted twice and rolled back; re-attempt requires a serial capture.
 
 **Principle:** Preserve a responsive, private, useful companion even when the internet
 or optional PSRAM is unavailable.
@@ -48,21 +50,24 @@ Acceptance criteria:
 
 ## Priority 2 — Multi-turn conversation
 
-- [ ] Assign a stable device/session identifier without exposing private hardware identifiers.
-- [ ] Keep a bounded recent-turn history on the Pi, not on the ESP32.
-- [ ] Resolve follow-ups such as “What about tomorrow?” using recent context.
-- [ ] Add an explicit “forget our conversation” command and automatic expiry.
-- [ ] Start a fresh session after a configurable idle period.
-- [ ] Prevent command responses and model replies from duplicating each other.
-- [ ] Keep replies short enough for a desktop companion and allow “tell me more”.
-- [ ] Preserve Ember's name, warm tone, and current voice across sessions.
-- [ ] Ground time, date, device state, and other factual local commands in tools rather than guesses.
-- [ ] Measure turn latency for recording, STT, model response, TTS, download, and playback.
+- [x] Assign a stable device/session identifier without exposing private hardware identifiers.
+- [x] Keep a bounded recent-turn history on the Pi, not on the ESP32.
+- [x] Resolve follow-ups such as “What about tomorrow?” using recent context.
+- [x] Add an explicit “forget our conversation” command and automatic expiry.
+- [x] Start a fresh session after a configurable idle period.
+- [x] Prevent command responses and model replies from duplicating each other.
+- [x] Keep replies short enough for a desktop companion and allow “tell me more”.
+- [x] Preserve Ember's name, warm tone, and current voice across sessions.
+- [x] Ground time, date, device state, and other factual local commands in tools rather than guesses.
+- [x] Measure turn latency for recording, STT, model response, TTS, download, and playback.
 - [ ] Compare at least ten identical prompts through Gemini and Ollama using gateway timings.
-- [ ] Re-measure the corrected 4 KB audio-download batching with a controlled short reply.
+- [x] Re-measure the corrected 4KB audio-download batching with a controlled short reply.
 - [ ] Reduce the 3–5 second Fire request overhead before changing STT or TTS models.
-- [ ] Evaluate playback from a growing/streamed WAV so speech can start before full download.
-- [ ] Evaluate 16 kHz response audio or a compact speech codec only if quality remains acceptable.
+- [ ] Evaluate playback from a growing/streamed WAV so speech can start before the full download
+      (attempted 0.12.0-stream-play and 0.12.0-stream-3buf; both rolled back — capture the failure
+      on serial before retrying).
+- [ ] Evaluate 16 kHz response audio or a compact speech codec only if quality remains acceptable
+      (8 kHz canonical WAV works and is active on the Pi; 16 kHz still untested).
 
 Acceptance criteria:
 

@@ -90,3 +90,6 @@ Record results and the measured five-turn behavior in `PROJECT_PROGRESS.md` and 
 the Priority 2 scope A items in `TODO.md`. Deferred scope B (streamed playback,
 request-overhead reduction, 16 kHz/codec, ten-prompt comparison) is a separate
 milestone and is not part of this deploy.
+
+Status: scope A implemented (device id `0.10.0-device-id`, gateway memory `0.3.0`);
+live five-turn on-device verification remains pending user execution.

@@ -12,11 +12,13 @@ selectable local or cloud conversation provider:
 ## Current deployed baseline
 
 The stack is running on a Raspberry Pi 5 with 8 GB RAM and SSD at `192.168.8.107:8088`.
-Fire firmware `0.9.3-audio-download` records a 16 kHz mono prompt, uploads it in a
+Fire firmware `0.11.0-download-conn` records a 16 kHz mono prompt, uploads it in a
 background task, downloads the response WAV to microSD, streams it with three bounded
 internal-RAM buffers, and applies the returned expression or supported device action.
 The accepted Fire speech output level is 141. Ollama remains the default and requires
 no cloud account. Gemini is optional and falls back to Ollama on network/API failure.
+Replies are served as canonical 8 kHz WAVs (`EMBER_AUDIO_RATE_HZ=8000`) to cut response
+bytes ~3.5x.
 
 The Pi 5 should run 64-bit Raspberry Pi OS from its SSD and have network access during
 installation. A wired Ethernet connection is recommended for the initial model downloads.

@@ -256,3 +256,42 @@ Implemented on branch `oc-updates` as firmware 0.12.0-stream-play:
   specific to the streaming build.
 - Repo state: firmware source fully reverted; gateway (Pi + source) still at
   `EMBER_AUDIO_RATE_HZ=8000` with the canonical-header resampler (kept).
+
+## 2026-08-08 — Streaming v2 attempt, runtime volume command, rollback
+
+Picked up from the "next steps" of the 0.12.0-stream-play rollback; goal was to get a
+serial capture of the streaming failure before retrying.
+
+- Streamed early-start playback v2 (`0.12.0-stream-3buf`) on `oc-updates`:
+  new `src/audio/StreamSink.h` producer->sink interface; `ResponseAudioPlayer`
+  implemented it with a 16 KB ring under a mutex, `StreamStarted` event, and
+  `StreamPending/StreamPlaying` states, feeding M5.Speaker from three static
+  1536-byte buffers (never handing ring pointers to the speaker);
+  `VoiceGatewayClient` gained `setStreamSink()`, `usedStream()`, and per-download
+  `beginStream/streamWrite/endStream/abortStream`; `Application` attached the sink
+  per turn and handled the new start/finish/fail events. Build clean
+  (RAM 2.1%, Flash 16.6%).
+- Runtime volume: added a serial `volume [0-100]` command
+  (`Application::handleSerialCommand` + `AudioFeedback::setVolumePercent`), rebuilt,
+  flashed, and applied `volume 75` (from 65). Confirmed live:
+  `[AUDIO] volume set to 75% speech_level=162`, persisted `nvs=ok sd=ok`.
+- Device LOCKUP on the first real streamed turn: face stuck `Speaking`, no audio,
+  no button response, stable heap; key insight — every earlier live turn used the
+  file-playback path (`[PLAYBACK] started`), never `[PLAYBACK] stream started`, so
+  the streaming path had never completed a real turn. Streaming-specific failure;
+  8 kHz canonical WAV playback itself works.
+- Rollback: reverted the uncommitted volume experiment (working tree restored),
+  `git revert 7aed648` -> commit `c63983d`, rebuilt and flashed known-good
+  `0.11.0-download-conn`; device verified stable (boot, Wi-Fi, a live turn).
+  Revert pushed to origin/oc-updates. `main` untouched.
+- Lessons for the next attempt: the streaming path must be exercised on-device
+  with a serial capture from the very first streamed turn; candidates remain
+  M5.Speaker begin-while-active, ring starvation, and speaker/gateway task
+  interleaving on core 0. The 0.12.0-stream-3buf commit and its revert are both
+  in history for reference.
+
+Docs updated: README, PROJECT_PROGRESS (last updated 2026-08-08), TODO.md
+(Priority 2 status: scope A done; scope B remaining open items), gateway/README,
+MULTI_TURN_DEPLOY_VERIFY status note, and this log. File cleanup: renamed
+`future-enhancements.md.md` -> `future-enhancements.md` and `future-updgrade.md` ->
+`future-upgrade.md`.
