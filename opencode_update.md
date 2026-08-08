@@ -475,3 +475,39 @@ MULTI_TURN_DEPLOY_VERIFY status note, and this log. File cleanup: renamed
   transcript, empty payload). 84 tests pass.
 - Version bumped to `0.7.2`. This supersedes the 0.7.1 422 fix for the common
   silent-prompt path.
+
+## 2026-08-08 (continued) — Device-ringing alarms (firmware 0.12.0-alarm-ringing, gateway 0.8.0)
+
+- User request: "set alarm for <time>, it must make an alarm sound" and
+  "when alarm has been created, please play alarm sound from device" with
+  a 3-second alarm duration. The push-to-talk constraint means the
+  gateway cannot ring the alarm on its own; the Fire must own the sound
+  and schedule the deadline.
+- Firmware (`src/alarm/AlarmManager.cpp/h`): stores an alarm deadline
+  (Unix seconds) in NVS (`AppConfig.alarmTime`, `AppConfig.alarmLabel`),
+  checks the NTP-synced system clock every second, and on the deadline
+  publishes `AlarmStarted` and plays a 3-second beeping pattern
+  (988Hz / 740Hz alternation) via `M5.Speaker.tone()`. The Alarmed
+  expression is held up until the user dismisses the alarm.
+- `NetworkManager`: NTP sync on Wi-Fi connect
+  (`configTime(GMT+2, 0, "pool.ntp.org")` for Africa/Johannesburg). The
+  Fire no longer relies on millis() for absolute time.
+- `VoiceGatewayClient` parses `alarm_time` from the gateway response and
+  exposes it as `pendingAlarmTime()`; the `Application` upgrades the
+  parsed `AssistantDirective` to `SetAlarm` and hands the deadline +
+  label to the `AlarmManager` (and persists them via `ConfigManager`).
+- `InputManager`: Button B click now emits `DismissAlarm`; in
+  `Application::handleCommandEvent`, while `alarm_.isRinging()` it
+  dismisses the alarm, otherwise it republishes `NextExpression` so the
+  existing demo flow is preserved. Holding Button A while the alarm
+  rings also dismisses it (so the user can talk over the alarm).
+- `commands.py`: new `_match_alarm` intent matches "set an alarm for
+  5:30 AM" (absolute, AM/PM aware, rolls to next day if past), "set an
+  alarm in 10 minutes" (relative), "what alarms are set?", "dismiss
+  my alarms". Timer store gains `kind` and `cancel_by_kind`.
+- `main.py`: gateway now returns `alarm_time` (absolute Unix seconds)
+  in the `/v1/voice` response when the user just scheduled an alarm.
+- 88 tests pass locally; firmware builds clean (RAM 1.7%, Flash 16.7%).
+- Deployed to the Pi (`sudo scripts/update-pi.sh`); firmware needs
+  `pio run --target upload --upload-port COMxx` before live testing.
+- Remaining: snooze and missed-reminder behavior (TODO Priority 3).

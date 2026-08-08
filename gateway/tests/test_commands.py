@@ -192,6 +192,24 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(result.action, "calc")
         self.assertIn("6.2137", result.reply)
 
+    def test_alarm_absolute_time(self):
+        result = match_local_command("set an alarm for 5:30 AM")
+        self.assertEqual(result.action, "alarm")
+        self.assertGreater(result.seconds, 0)
+
+    def test_alarm_relative(self):
+        result = match_local_command("set an alarm in 10 minutes")
+        self.assertEqual(result.action, "alarm")
+        self.assertEqual(result.seconds, 600)
+
+    def test_alarm_list(self):
+        result = match_local_command("list my alarms")
+        self.assertEqual(result.action, "alarm-list")
+
+    def test_alarm_dismiss(self):
+        result = match_local_command("dismiss my alarms")
+        self.assertEqual(result.action, "alarm-dismiss")
+
     def test_search_shorts_are_not_intents(self):
         self.assertIsNone(match_local_command("search it"))
         self.assertIsNone(match_local_command("look that up"))

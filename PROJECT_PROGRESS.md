@@ -497,6 +497,34 @@ pio device monitor --port COMxx --baud 115200
 - Gateway version `0.5.0`; 53 tests passing locally. See `opencode_update.md`.
 - Next slice: deterministic calculations and unit conversions in the gateway.
 
+## 2026-08-08 status (Priority 3 slice 6: device-ringing alarms, firmware 0.12.0-alarm-ringing, gateway 0.8.0)
+
+- New `src/alarm/AlarmManager` module on the Fire. Stores an alarm deadline
+  (Unix seconds) in NVS, checks the NTP-synced system clock every second,
+  and at the deadline plays a 3-second beeping pattern via `M5.Speaker.tone()`
+  with the Alarmed expression held up until the user dismisses.
+- NTP time sync added to `NetworkManager` on Wi-Fi connect
+  (`configTime(GMT+2, 0, "pool.ntp.org")` for Africa/Johannesburg), so the
+  Fire can fire the alarm at the right wall-clock time even after restart.
+- New `SetAlarm` action in the gateway directive. The gateway now returns
+  `alarm_time` (absolute Unix seconds) in `/v1/voice` responses when the
+  user just set an alarm; the Fire persists the deadline and the label to
+  NVS, restores them on boot, and uses the local NTP clock to fire the sound.
+- New alarm intents in `commands.py`: `set an alarm for 5:30 AM` (absolute
+  time, AM/PM aware, rolls to next day if past), `set an alarm in 10 minutes`
+  (relative), `what alarms are set?`, `dismiss my alarms`.
+- `TimerStore` extended with a `kind` field (timer or alarm) and
+  `cancel_by_kind`. Gateway handlers `handle_alarm_schedule/list/dismiss` are
+  thin wrappers around the same store.
+- Dismissal UX: Button B click while the alarm is ringing dismisses it; if
+  the alarm is not ringing, Button B still advances the expression so the
+  existing manual-demo flow is preserved. Holding Button A while the alarm
+  rings also dismisses it (the user wants to talk rather than be beeped at).
+- Firmware version 0.12.0-alarm-ringing (RAM 1.7%, Flash 16.7%); 88 gateway
+  tests pass locally. Build succeeded; needs a `pio run --target upload` to
+  the Fire and a `sudo scripts/update-pi.sh` on the Pi.
+- Remaining: snooze and missed-reminder behavior (TODO Priority 3).
+
 ## 2026-08-08 status (Priority 3 slice 4: calculations and unit conversions, gateway 0.6.0)
 
 - New `gateway/ember_gateway/calc.py`: fully deterministic, unit-tested math

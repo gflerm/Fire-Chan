@@ -22,6 +22,10 @@ class Timer:
     label: str
     due_at: float  # time.monotonic() deadline
     created_at: float
+    # "timer" (announce on next voice turn) or "alarm" (the device fires a
+    # local 3-second alarm sound at the deadline). The gateway stores both
+    # kinds; the Fire only acts on alarms.
+    kind: str = "timer"
     announced: bool = False
 
 
@@ -31,7 +35,13 @@ class TimerStore:
         self._timers: dict[str, Timer] = {}
         self._lock = threading.Lock()
 
-    def add(self, device_id: str, label: str, seconds: float) -> Timer | None:
+    def add(
+        self,
+        device_id: str,
+        label: str,
+        seconds: float,
+        kind: str = "timer",
+    ) -> Timer | None:
         now = time.monotonic()
         if seconds <= 0 or seconds > 24 * 3600:
             return None
@@ -45,6 +55,7 @@ class TimerStore:
                 label=label or "a timer",
                 due_at=now + seconds,
                 created_at=now,
+                kind=kind,
             )
             self._timers[timer.id] = timer
             return timer
@@ -80,4 +91,14 @@ class TimerStore:
                     continue
                 del self._timers[timer.id]
                 removed += 1
+            return removed
+
+    def cancel_by_kind(self, device_id: str, kind: str) -> int:
+        """Cancel all timers of a given kind for a device."""
+        with self._lock:
+            removed = 0
+            for timer in list(self._timers.values()):
+                if timer.device_id == device_id and timer.kind == kind:
+                    del self._timers[timer.id]
+                    removed += 1
             return removed

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 from zoneinfo import ZoneInfo
 
@@ -122,6 +122,8 @@ def match_local_command(
         return volume
     if timer := _match_timer(normalized):
         return timer
+    if alarm := _match_alarm(text, timezone):
+        return alarm
     if search := _match_search(normalized):
         return search
     if weather := _match_weather(normalized):
@@ -269,6 +271,66 @@ def _match_calc(text: str) -> CommandResult | None:
     if answer is None:
         return None
     return CommandResult(answer, "happy", "calc")
+
+
+def _parse_alarm_time(text: str, timezone: str) -> datetime | None:
+    """Parse an absolute time from phrases like "set alarm for 5:30 AM".
+
+    Returns the next occurrence of that time in ``timezone``. If no AM/PM is
+    given, the hour is assumed to be AM and rolls forward to the next future
+    occurrence.
+    """
+    match = re.search(
+        r"\b(?:for|at)\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm|AM|PM)\b",
+        text,
+    )
+    if not match:
+        return None
+    hour = int(match.group(1))
+    minute = int(match.group(2) or 0)
+    ampm = match.group(3).lower()
+    if ampm == "pm" and hour < 12:
+        hour += 12
+    elif ampm == "am" and hour == 12:
+        hour = 0
+    now = datetime.now(ZoneInfo(timezone))
+    alarm_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    if alarm_time <= now:
+        alarm_time += timedelta(days=1)
+    return alarm_time
+
+
+def _match_alarm(text: str, timezone: str = "Africa/Johannesburg") -> CommandResult | None:
+    """Alarm intents: set, list, dismiss. The Fire plays the actual sound."""
+    if not re.search(r"\balarms?\b", text):
+        return None
+    if re.search(r"\b(list|show|what alarms?|active)\b", text):
+        return CommandResult("I'll show your alarms.", "happy", "alarm-list")
+    if re.search(r"\b(cancel|dismiss|stop|remove|delete|turn off|clear)\b", text):
+        return CommandResult("I'll dismiss your alarms.", "neutral", "alarm-dismiss")
+    absolute = _parse_alarm_time(text, timezone)
+    if absolute is not None:
+        return CommandResult(
+            f"Alarm set for {absolute.strftime('%I:%M %p').lstrip('0')}.",
+            "happy",
+            "alarm",
+            seconds=(absolute - datetime.now(ZoneInfo(timezone))).total_seconds(),
+            query="alarm",
+        )
+    relative = _timer_seconds(text)
+    if relative is not None:
+        return CommandResult(
+            f"Alarm set for {int(relative)} seconds from now.",
+            "happy",
+            "alarm",
+            seconds=relative,
+            query="alarm",
+        )
+    return CommandResult(
+        "I can set an alarm. What time, in hours and minutes?",
+        "curious",
+        "alarm",
+    )
 
 
 def choose_expression(text: str) -> str:

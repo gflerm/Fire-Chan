@@ -14,6 +14,7 @@ pattern, then bump `__version__` in `gateway/ember_gateway/__init__.py`.
 | Grounded web search | `search.py` (`WebSearchClient`) | `_match_search` | `handle_search` | `test_tools.py` |
 | Weather | `weather.py` (`WeatherClient`) | `_match_weather` (+ trailing-place capture) | `handle_weather` | `test_tools.py` |
 | Timers / reminders | `timers.py` (`TimerStore`) | `_match_timer` (+`timer-list`/`timer-cancel`) | `handle_timer_schedule` / `handle_timer_list` / `handle_timer_cancel` | `test_tools.py` |
+| Alarms | `timers.py` (`TimerStore`, `kind="alarm"`) + firmware `AlarmManager` | `_match_alarm` (+`alarm-list`/`alarm-dismiss`) | `handle_alarm_schedule` / `handle_alarm_list` / `handle_alarm_dismiss` (returns `alarm_time` in response) | `test_commands.py` |
 | Calculations / unit conversions | `calc.py` (AST-safe `evaluate_arithmetic`, `parse_calculation`) | `_match_calc` (raw text) | none (reply resolved at match time) | `test_calc.py` |
 | Device status | — (facts in `commands.py`) | `parse_device_status` / `_status_describe` | status branch | `test_commands.py` |
 | Time / date / help / repeat / volume | `commands.py` | `match_local_command` | repeat branch | `test_commands.py` |
@@ -39,7 +40,7 @@ pattern, then bump `__version__` in `gateway/ember_gateway/__init__.py`.
 ## Development workflow
 
 - Tests: `PYTHONPATH=gateway python -m unittest discover -s gateway/tests`
-  (81 tests currently). Run them after any gateway change.
+  (88 tests currently). Run them after any gateway change.
 - Version bumps: `gateway/ember_gateway/__init__.py` — keep it in the same commit
   as the change.
 - Docs: update `TODO.md` (check off the item), `PROJECT_PROGRESS.md` (status

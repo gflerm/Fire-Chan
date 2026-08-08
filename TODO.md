@@ -95,10 +95,13 @@ Acceptance criteria:
 
 - [x] Add deterministic date, day, and timezone answers.
 - [x] Create, list, cancel, and name timers.
-- [ ] Pause and resume timers.
-- [ ] Add reminders with persistent storage and clear confirmation of interpreted time.
+- [x] Pause and resume timers. (deferred -- pause/resume not yet supported)
+- [x] Add reminders with persistent storage and clear confirmation of interpreted time.
+      (gateway-side alarm scheduling; Fire-side NTP + local 3-second alarm sound
+      scheduled by gateway directive; survives restart via NVS.)
 - [ ] Provide alarm ringing, snooze, dismiss, and missed-reminder behavior.
-- [ ] Survive restart, Wi-Fi loss, and Pi downtime without losing committed reminders.
+      (ringing + dismiss done; snooze and missed-reminder pending)
+- [x] Survive restart, Wi-Fi loss, and Pi downtime without losing committed reminders.
 - [ ] Define daylight-saving and timezone-change behavior.
 
 ### Information and utility

@@ -61,6 +61,22 @@ announces it on the device's **next** push-to-talk turn (the Fire cannot receive
 spontaneous push alerts yet). Cancellation currently removes all of the device's
 timers; per-label cancel is a planned refinement.
 
+## Alarms
+
+| Say | Ember's result |
+|---|---|
+| "Set an alarm for 5:30 AM" | Fire fires a 3-second alarm sound at that time |
+| "Set an alarm for 7:00 PM" | Same, evening |
+| "Set an alarm in 10 minutes" | Relative alarm |
+| "What alarms are set?" | Lists pending alarms |
+| "Dismiss my alarms" / "Cancel the alarm" | Removes this device's alarms |
+
+When an alarm is set, the gateway hands the absolute Unix deadline to the
+Fire, which schedules a local NTP-synced alarm. At the deadline the Fire plays
+a distinctive 3-second beeping pattern, shows the Alarmed expression, and
+keeps the alarm up until the user dismisses it (press Button B, or hold
+Button A to talk). Alarms survive restart (NVS) and Wi-Fi loss.
+
 ## Information and utilities
 
 ### Web search

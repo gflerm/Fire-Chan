@@ -125,6 +125,36 @@ def handle_timer_cancel(device_id: str) -> tuple[str, str]:
             else f"I cancelled {removed} timers.", "happy")
 
 
+def handle_alarm_schedule(device_id: str, command: object) -> tuple[str, str]:
+    """Schedule an alarm on the device. The Fire fires the sound locally."""
+    seconds = float(getattr(command, "seconds", 0) or 0)
+    if seconds <= 0:
+        return "I couldn't understand when the alarm should ring.", "confused"
+    alarm = timers.add(device_id, "alarm", seconds, kind="alarm")
+    if alarm is None:
+        return "I could not set that alarm; too many are already queued.", "sad"
+    return f"Alarm set for {seconds:g} seconds from now.", "happy"
+
+
+def handle_alarm_list(device_id: str) -> tuple[str, str]:
+    pending = [t for t in timers.list(device_id) if t.kind == "alarm"]
+    if not pending:
+        return "You have no active alarms.", "neutral"
+    remaining = [
+        f"{int(t.due_at - time.monotonic()) // 60} minutes"
+        for t in pending
+    ]
+    return "Active alarms: " + "; ".join(remaining) + ".", "happy"
+
+
+def handle_alarm_dismiss(device_id: str) -> tuple[str, str]:
+    removed = timers.cancel_by_kind(device_id, "alarm")
+    if removed == 0:
+        return "There were no alarms to dismiss.", "neutral"
+    return ("I dismissed your alarm." if removed == 1
+            else f"I dismissed {removed} alarms.", "happy")
+
+
 def authorize(x_ember_token: str = Header(default="")) -> None:
     if x_ember_token != settings.token:
         raise HTTPException(status_code=401, detail="Invalid Ember token")
@@ -215,6 +245,12 @@ async def voice(
             reply, expression = handle_timer_list(device_id)
         elif command.action == "timer-cancel":
             reply, expression = handle_timer_cancel(device_id)
+        elif command.action == "alarm":
+            reply, expression = handle_alarm_schedule(device_id, command)
+        elif command.action == "alarm-list":
+            reply, expression = handle_alarm_list(device_id)
+        elif command.action == "alarm-dismiss":
+            reply, expression = handle_alarm_dismiss(device_id)
         if command.clear_session:
             sessions.clear(device_id)
         else:
@@ -236,6 +272,12 @@ async def voice(
         reply = announcement + reply
     replied_at = time.perf_counter()
 
+    # If the user just scheduled an alarm, hand the absolute Unix timestamp to
+    # the Fire so it can fire a local 3-second alarm sound at the deadline.
+    alarm_time_unix = 0
+    if command and command.action == "alarm" and getattr(command, "seconds", 0) > 0:
+        alarm_time_unix = int(time.time() + float(command.seconds))
+
     prune_audio()
     audio_id = uuid4().hex
     await services.synthesize(reply, settings.audio_dir / f"{audio_id}.wav")
@@ -247,6 +289,7 @@ async def voice(
         "action": action,
         "audio_url": f"/v1/audio/{audio_id}.wav",
         "conversation_provider": reply_provider,
+        "alarm_time": alarm_time_unix,
         "timings_ms": {
             "upload_validation": round((transcription_started - request_started) * 1000),
             "transcription": round((transcribed_at - transcription_started) * 1000),

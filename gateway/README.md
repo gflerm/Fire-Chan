@@ -132,6 +132,9 @@ Open-Meteo and are read out deterministically.
 | "Set a timer for 5 minutes" / "remind me" | Named per-device timer announced on the next turn |
 | "What timers are active?" | List of pending per-device timers |
 | "Cancel my timers" | Removes the device's pending timers |
+| "Set an alarm for 5:30 AM" / "set an alarm in 10 minutes" | Gateway hands the deadline to the Fire; the Fire fires a local 3-second alarm sound at the time |
+| "What alarms are set?" | List of pending alarms |
+| "Dismiss my alarms" | Removes the device's pending alarms |
 | "What is 6 times 8?" | Deterministic safe arithmetic (incl. spoken words, powers) |
 | "Convert 10 km to miles" | Deterministic unit conversion (length/mass/volume/speed/temperature) |
 
