@@ -129,6 +129,8 @@ def _normalize_unit(word: str) -> tuple[str, float] | None:
         if normalized in aliases:
             base = aliases[normalized]
             return base, _TO_BASE[category][base]
+        if normalized in _TO_BASE[category]:
+            return normalized, _TO_BASE[category][normalized]
     return None
 
 

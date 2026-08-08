@@ -68,6 +68,12 @@ class ConversionTests(unittest.TestCase):
             "2 miles is 3520 yards.",
         )
 
+    def test_bare_abbreviations(self):
+        self.assertEqual(
+            parse_calculation("10 kg in pounds"),
+            "10 kg is 22.0462 pounds.",
+        )
+
     def test_celsius_to_fahrenheit(self):
         self.assertEqual(parse_calculation("100 celsius in fahrenheit"), "100 celsius is 212 fahrenheit.")
 
