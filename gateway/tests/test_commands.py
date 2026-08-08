@@ -83,12 +83,43 @@ class CommandTests(unittest.TestCase):
     def test_status_with_device_facts(self):
         result = match_local_command(
             "How are you?",
-            device_status="fw=0.11.1;wifi=1;battery=80",
+            device_status="fw=0.11.1;wifi=1;battery=80;sd_free_mb=2048",
         )
         self.assertEqual(result.action, "status")
         self.assertIn("connected to Wi-Fi", result.reply)
         self.assertIn("80% battery", result.reply)
         self.assertIn("firmware 0.11.1", result.reply)
+        self.assertIn("2048", result.reply)
+
+    def test_status_answers_battery_question(self):
+        result = match_local_command(
+            "What is your battery level?",
+            device_status="fw=0.11.1;wifi=1;battery=80",
+        )
+        self.assertEqual(result.action, "status")
+        self.assertIn("80% battery", result.reply)
+
+    def test_status_answers_wifi_question(self):
+        result = match_local_command(
+            "Are you connected to Wi-Fi?",
+            device_status="fw=0.11.1;wifi=1",
+        )
+        self.assertIn("connected to Wi-Fi", result.reply)
+
+    def test_status_answers_storage_question(self):
+        result = match_local_command(
+            "How much storage do you have?",
+            device_status="fw=0.11.1;sd_free_mb=1024;battery=na",
+        )
+        self.assertIn("1024", result.reply)
+        self.assertNotIn("battery", result.reply)
+
+    def test_status_empty_battery_omitted(self):
+        result = match_local_command(
+            "status", device_status="fw=0.11.1;battery=na;wifi=1"
+        )
+        self.assertIn("connected to Wi-Fi", result.reply)
+        self.assertNotIn("battery", result.reply)
 
     def test_status_without_facts(self):
         result = match_local_command("How are you?")

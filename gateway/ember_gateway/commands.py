@@ -50,14 +50,20 @@ def parse_device_status(text: str) -> dict[str, str]:
 
 def _status_describe(facts: dict[str, str]) -> str:
     parts = []
-    if facts.get("wifi") == "1":
-        parts.append("connected to Wi-Fi")
-    elif "wifi" in facts:
-        parts.append("offline from Wi-Fi")
+    if "wifi" in facts:
+        parts.append("connected to Wi-Fi" if facts["wifi"] == "1" else "offline")
     if "battery" in facts:
         try:
             percent = int(facts["battery"])
-            parts.append(f"about {percent}% battery")
+            if percent >= 0:
+                parts.append(f"about {percent}% battery")
+        except (KeyError, ValueError):
+            pass
+    if "sd_free_mb" in facts:
+        try:
+            free_mb = int(facts["sd_free_mb"])
+            if free_mb >= 0:
+                parts.append(f"about {free_mb} megabytes free on storage")
         except ValueError:
             pass
     if "fw" in facts:
@@ -110,7 +116,11 @@ def match_local_command(
         return CommandResult("Voice is back on.", "happy", "unmute")
     if volume := _match_volume(normalized):
         return volume
-    if re.search(r"\b(status|how are you)\b", normalized):
+    if re.search(
+        r"\b(status|how are you|battery|wi-?fi|wifi|storage|space|firmware|"
+        r"what are your levels|how much storage|are you connected)\b",
+        normalized,
+    ):
         describe = _status_describe(parse_device_status(device_status))
         reply = f"I'm {describe}." if describe else "I'm online and feeling bright."
         return CommandResult(reply, "happy", "status")

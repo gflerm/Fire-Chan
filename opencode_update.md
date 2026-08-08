@@ -337,3 +337,10 @@ MULTI_TURN_DEPLOY_VERIFY status note, and this log. File cleanup: renamed
   (optional PSRAM not fitted). Stable heap while idle.
 - Definition of done for slice 2: a live spoken volume turn through the gateway
   and a confirmed persisted value. Not yet physically verified on this session.
+
+- Status-fact question follow-up: when asked questions like "what is your battery?"
+  or "Wi-Fi?", Ember answered "I don't know" because the matcher only fired on
+  "status"/"how are you" and the free-storage fact was never rendered. Gateway now
+  matches battery/Wi-Fi/storage/firmware/levels intents, renders `sd_free_mb`, and
+  omits `na` values. REMEMBER: the Pi must be updated (`sudo ./scripts/update-pi.sh`)
+  after every gateway change; the running stack was last built before slices 1-2.
