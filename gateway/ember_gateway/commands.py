@@ -11,6 +11,8 @@ class CommandResult:
     action: str | None = None
     clear_session: bool = False
     repeat_last: bool = False
+    query: str = ""
+    seconds: float = 0.0
 
 
 VOLUME_HELP = (
@@ -116,6 +118,12 @@ def match_local_command(
         return CommandResult("Voice is back on.", "happy", "unmute")
     if volume := _match_volume(normalized):
         return volume
+    if timer := _match_timer(normalized):
+        return timer
+    if search := _match_search(normalized):
+        return search
+    if weather := _match_weather(normalized):
+        return weather
     if re.search(
         r"\b(status|how are you|battery|wi-?fi|wifi|storage|space|firmware|"
         r"what are your levels|how much storage|are you connected)\b",
@@ -147,6 +155,103 @@ def _match_volume(text: str) -> CommandResult | None:
     ):
         step = -10 if re.search(r"\b(quieter|decrease|down)\b", text) else 10
         return CommandResult("I'll adjust the volume.", "happy", _volume_target(step))
+    return None
+
+
+# Reminder/timer deadline parsing: "5 minutes", "two hours", "30 seconds".
+_NUMBER_WORDS = {
+    "one": 1, "a": 1, "an": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+    "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10, "fifteen": 15,
+    "twenty": 20, "thirty": 30, "forty": 40, "fortyfive": 45,
+    "fifty": 50, "sixty": 60,
+}
+
+
+def _timer_seconds(text: str) -> float | None:
+    """Extract a duration from \"in 5 minutes\" / \"for 30 seconds\"."""
+    unit = 0.0
+    match = re.search(r"\b(\d+)\s*(seconds?|minutes?|mins?|hours?|hrs?|hours?)\b", text)
+    if match:
+        value = int(match.group(1))
+        unit_word = match.group(2)
+    else:
+        word = re.search(r"\b(one|a|an|two|three|four|five|six|seven|eight|nine|ten|"
+                         r"fifteen|twenty|thirty|forty|fortyfive|fifty|sixty)\s*"
+                         r"(seconds?|minutes?|mins?|hours?|hrs?)\b", text)
+        if not word:
+            return None
+        value = _NUMBER_WORDS[word.group(1)]
+        unit_word = word.group(2)
+    if unit_word.startswith("second"):
+        unit = 1.0
+    elif unit_word.startswith("min"):
+        unit = 60.0
+    else:
+        unit = 3600.0
+    return value * unit
+
+
+def _match_timer(text: str) -> CommandResult | None:
+    if re.search(r"\b(timers?|remind|reminder|set (a )?timer|countdown)\b", text):
+        # "set a timer for 5 minutes" / "remind me in 2 minutes to stretch"
+        seconds = _timer_seconds(text)
+        if seconds is not None:
+            label = ""
+            label_match = re.search(
+                r"\bto (.+?)$|\b(?:remind me|set (?:a )?timer)\b.*\b(?:to )?(?:for )?(.+?)$",
+                text,
+            )
+            if label_match:
+                label = (label_match.group(1) or label_match.group(2) or "").strip()
+                label = re.sub(r"\b(in|for) \d+( seconds?| minutes?| mins?| hours?)\b", "", label)
+                label = re.sub(r"\b(set|a|the|me|for|in|to)\b", " ", label).strip()
+            return CommandResult(
+                f"Timer set for {int(seconds)} seconds.",
+                "happy",
+                "timer",
+                seconds=seconds,
+                query=label,
+            )
+        if re.search(r"\b(cancel|clear|remove|stop)\b", text):
+            return CommandResult("I'll cancel your timers.", "neutral", "timer-cancel")
+        if re.search(r"\b(list|show|what timers|active)\b", text):
+            return CommandResult("I'll show your timers.", "happy", "timer-list")
+        # A timer/reminder was asked for but no duration was understood.
+        return CommandResult(
+            "I can set a timer or reminder. How long should it be, in seconds or minutes?",
+            "curious",
+            "timer",
+        )
+    return None
+
+
+def _match_search(text: str) -> CommandResult | None:
+    """Explicit web-search intent: \"search for X\", \"look up X\"."""
+    match = re.search(
+        r"\b(search|look up|google|find out|check what|look into)\b(?: the web| online)?\s*"
+        r"(?:for|about|on)?\s*(.+?)$",
+        text,
+    )
+    if not match:
+        return None
+    query = match.group(2).strip()
+    if not query or re.search(r"\b(help|options|it|them|that)\b", query) and len(query) < 6:
+        return None
+    return CommandResult(
+        f"Let me look that up: {query}.",
+        "curious",
+        "search",
+        query=query,
+    )
+
+
+def _match_weather(text: str) -> CommandResult | None:
+    if re.search(
+        r"\b(weather|forecast|temperature|rain(ing)?|snow(ing)?|sunny|cloudy|"
+        r"hot|cold|what'?s it like outside)\b",
+        text,
+    ):
+        return CommandResult("Let me check the weather.", "curious", "weather")
     return None
 
 

@@ -139,6 +139,43 @@ class CommandTests(unittest.TestCase):
     def test_parse_device_status_ignores_malformed(self):
         self.assertEqual(parse_device_status("nor valid"), {})
 
+    def test_search_intent_extracts_query(self):
+        result = match_local_command("Search the web for how to make sourdough")
+        self.assertEqual(result.action, "search")
+        self.assertIn("sourdough", result.query)
+
+    def test_look_up_intent(self):
+        result = match_local_command("look up the weather in London")
+        self.assertEqual(result.action, "search")
+        self.assertIn("london", result.query)
+
+    def test_timer_intent_minutes(self):
+        result = match_local_command("set a timer for 5 minutes")
+        self.assertEqual(result.action, "timer")
+        self.assertEqual(result.seconds, 300)
+
+    def test_timer_intent_seconds_word(self):
+        result = match_local_command("remind me in 30 seconds to stretch")
+        self.assertEqual(result.action, "timer")
+        self.assertEqual(result.seconds, 30)
+        self.assertIn("stretch", result.query)
+
+    def test_timer_list_intent(self):
+        result = match_local_command("what timers are active")
+        self.assertEqual(result.action, "timer-list")
+
+    def test_timer_cancel_intent(self):
+        result = match_local_command("cancel my timers")
+        self.assertEqual(result.action, "timer-cancel")
+
+    def test_weather_intent(self):
+        result = match_local_command("what is the weather like?")
+        self.assertEqual(result.action, "weather")
+
+    def test_search_shorts_are_not_intents(self):
+        self.assertIsNone(match_local_command("search it"))
+        self.assertIsNone(match_local_command("look that up"))
+
 
 if __name__ == "__main__":
     unittest.main()

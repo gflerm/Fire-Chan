@@ -24,6 +24,9 @@ class Settings:
     audio_rate_hz: int
     session_max_turns: int
     session_idle_seconds: float
+    weather_latitude: float
+    weather_longitude: float
+    weather_place: str
 
     @classmethod
     def from_environment(cls) -> "Settings":
@@ -69,4 +72,7 @@ class Settings:
             audio_rate_hz=max(int(os.getenv("EMBER_AUDIO_RATE_HZ", "0")), 0),
             session_max_turns=max(int(os.getenv("SESSION_MAX_TURNS", "6")), 1),
             session_idle_seconds=max(float(os.getenv("SESSION_IDLE_SECONDS", "1800")), 0),
+            weather_latitude=float(os.getenv("EMBER_WEATHER_LAT", "0")),
+            weather_longitude=float(os.getenv("EMBER_WEATHER_LON", "0")),
+            weather_place=os.getenv("EMBER_WEATHER_PLACE", "your area"),
         )
