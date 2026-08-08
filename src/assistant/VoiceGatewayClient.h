@@ -4,6 +4,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+#include "audio/StreamSink.h"
+
 namespace firechan {
 
 enum class VoiceGatewayEvent : uint8_t {
@@ -18,6 +20,8 @@ class VoiceGatewayClient {
   bool submit(const char* recordingPath);
   VoiceGatewayEvent update();
   void setDeviceId(const char* id);
+  void setStreamSink(StreamSink* sink);
+  bool usedStream() const { return streamedThisTurn_ && streamSink_ != nullptr; }
 
   bool busy() const { return state_ == State::Pending || state_ == State::Working; }
   const char* transcript() const { return transcript_; }
@@ -53,6 +57,8 @@ class VoiceGatewayClient {
   char error_[kErrorCapacity] = {};
   char deviceId_[33] = {};
   uint8_t downloadBuffer_[kDownloadBufferSize] = {};
+  StreamSink* streamSink_ = nullptr;
+  bool streamedThisTurn_ = false;
 };
 
 }  // namespace firechan

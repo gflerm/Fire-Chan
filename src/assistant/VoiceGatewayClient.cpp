@@ -43,6 +43,7 @@ bool VoiceGatewayClient::submit(const char* recordingPath) {
   }
   strlcpy(recordingPath_, recordingPath, sizeof(recordingPath_));
   transcript_[0] = reply_[0] = expression_[0] = action_[0] = error_[0] = '\0';
+  streamedThisTurn_ = false;
   state_ = State::Pending;
   xTaskNotifyGive(task_);
   return true;
@@ -50,6 +51,10 @@ bool VoiceGatewayClient::submit(const char* recordingPath) {
 
 void VoiceGatewayClient::setDeviceId(const char* id) {
   strlcpy(deviceId_, id ? id : "", sizeof(deviceId_));
+}
+
+void VoiceGatewayClient::setStreamSink(StreamSink* sink) {
+  streamSink_ = sink;
 }
 
 VoiceGatewayEvent VoiceGatewayClient::update() {
@@ -125,6 +130,15 @@ bool VoiceGatewayClient::downloadAudio(const char* audioUrl) {
     return false;
   }
 
+  // The player can begin playback while the download is still in flight if a
+  // sink is attached (unmuted path). The canonical header leads the stream.
+  bool feeding = false;
+  if (streamSink_ != nullptr) {
+    feeding = streamSink_->beginStream(
+        streamed ? 0u : static_cast<uint32_t>(contentLength));
+  }
+  streamedThisTurn_ = feeding;
+
   // Batch network fragments into SD-friendly blocks. Writing every small TCP
   // fragment directly to the card made response downloads the dominant delay.
   size_t buffered = 0;
@@ -162,6 +176,9 @@ bool VoiceGatewayClient::downloadAudio(const char* audioUrl) {
           transferOk = false;
           break;
         }
+        if (feeding && !streamSink_->streamWrite(downloadBuffer_, buffered)) {
+          feeding = false;
+        }
         buffered = 0;
       }
     } else {
@@ -173,26 +190,34 @@ bool VoiceGatewayClient::downloadAudio(const char* audioUrl) {
       output.write(downloadBuffer_, buffered) != buffered) {
     transferOk = false;
   }
+  if (feeding && buffered > 0 &&
+      !streamSink_->streamWrite(downloadBuffer_, buffered)) {
+    feeding = false;
+  }
   output.flush();
   const bool writeOk = transferOk && output.getWriteError() == 0;
   output.close();
   request.stop();
   if (!writeOk || received < 44 ||
       (!streamed && received != static_cast<size_t>(contentLength))) {
+    if (feeding) streamSink_->abortStream();
     SD.remove(kTemporaryAudioPath);
     setError("response audio was incomplete");
     return false;
   }
   if (SD.exists(kResponseAudioPath) && !SD.remove(kResponseAudioPath)) {
+    if (feeding) streamSink_->abortStream();
     SD.remove(kTemporaryAudioPath);
     setError("previous response audio could not be replaced");
     return false;
   }
   if (!SD.rename(kTemporaryAudioPath, kResponseAudioPath)) {
+    if (feeding) streamSink_->abortStream();
     SD.remove(kTemporaryAudioPath);
     setError("response audio rename failed");
     return false;
   }
+  if (feeding) streamSink_->endStream();
   Serial.printf("[ASSISTANT] audio=%s bytes=%u\n", kResponseAudioPath,
                 static_cast<unsigned>(received));
   return true;

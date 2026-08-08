@@ -256,3 +256,34 @@ Implemented on branch `oc-updates` as firmware 0.12.0-stream-play:
   specific to the streaming build.
 - Repo state: firmware source fully reverted; gateway (Pi + source) still at
   `EMBER_AUDIO_RATE_HZ=8000` with the canonical-header resampler (kept).
+
+### Streamed early-start playback v2: 3-buffer sink redesign (0.12.0-stream-3buf)
+
+Root-cause review of the prior red error stressed never handing the producer
+(ring) pointer to M5.Speaker: `_play_raw()` queues a pointer and `spk_task`
+consumes it asynchronously, so a ring whose contents get overwritten mid-queue
+corrupts playback. v2 keeps M5.Speaker fed ONLY from three static 1536-byte
+buffers and moves the window rotation logic into the player:
+- New `src/audio/StreamSink.h` producer->sink interface:
+  `beginStream(len)`, `streamWrite(const uint8_t*, size_t)` (both bool),
+  `endStream()`, `abortStream()`.
+- `ResponseAudioPlayer` implements it: 16 KB ring under `streamMutex_`, new
+  `StreamStarted` event, `StreamPending/StreamPlaying` states. Playback task
+  pulls the 44-byte canonical header from the ring, pre-fills four 4 KB
+  requests (or the whole short reply) before playing, then feeds M5.Speaker
+  from ring in sample-rate-sized chunks at pageAligned=1, honoring M5
+  backpressure; failure paths set `streamAborted_`.
+- `VoiceGatewayClient`: `setStreamSink()` + `usedStream()` +
+  `streamedThisTurn_`; `downloadAudio` opens the stream first, forwards full 4 KB
+  SD batches (only flushed buffers, not partial tail) and calls
+  `endStream()`/`abortStream()` per-download based on success.
+- `Application::update()`: attach/detach sink per turn (muted turns -> no sink,
+  resume-and-read flow); `StreamStarted` -> suspend + SpeakingStarted; short
+  replies that already finished apply the directive at ResponseReady directly.
+- Firmware `0.12.0-stream-3buf`. Mock verify (576-point chirp test
+  `test/samples/8khz_both.talker.wav`) passed in Streaming mode; tone parses and
+  plays. Build clean.
+- REMINDER (field test): always capture a live turn on serial first; if the red
+  error returns, get the streaming serial trace before changing design again. Use
+  the v1 list plus: verify M5.Speaker.begin() runs while no playback is active,
+  and confirm pageAligned=1 actually keeps 3×768 samples spinning cleanly.
