@@ -16,6 +16,20 @@ class _Transport(httpx.AsyncBaseTransport):
         return httpx.Response(200, json=self.payload)
 
 
+class _RoutingTransport(httpx.AsyncBaseTransport):
+    """Returns a payload based on the request URL (geocode vs forecast)."""
+
+    def __init__(self, geocode: dict | None, forecast: dict | None):
+        self.geocode = geocode
+        self.forecast = forecast
+
+    async def handle_async_request(self, request):
+        url = str(request.url)
+        if "geocoding" in url and self.geocode is not None:
+            return httpx.Response(200, json=self.geocode)
+        return httpx.Response(200, json=self.forecast or {})
+
+
 class WebSearchClientTests(unittest.TestCase):
     def test_search_parses_answer_and_topics(self):
         client = WebSearchClient(
@@ -77,6 +91,65 @@ class WeatherTests(unittest.TestCase):
         self.assertIn("Cape Town", text)
         self.assertIn("18", text)
         self.assertIn("kilometres", text)
+
+    def test_named_place_resolves_and_fetches(self):
+        transport = _RoutingTransport(
+            geocode={
+                "results": [{"name": "Cape Town", "admin1": "Western Cape",
+                             "country": "South Africa", "latitude": -33.9,
+                             "longitude": 18.4}]
+            },
+            forecast={
+                "current": {"temperature_2m": 18.2, "apparent_temperature": 16.0,
+                            "weather_code": 61, "wind_speed_10m": 24.0}
+            },
+        )
+        client = WeatherClient(location_file=None, transport=transport)
+        result = asyncio.run(client.current(place="Cape Town"))
+        self.assertEqual(result.temperature_c, 18.2)
+        self.assertIn("Cape Town, Western Cape, South Africa", result.place)
+
+    def test_unknown_place_raises(self):
+        transport = _RoutingTransport(geocode={"results": []}, forecast={})
+        client = WeatherClient(location_file=None, transport=transport)
+        with self.assertRaises(Exception) as context:
+            asyncio.run(client.current(place="Atlantis City"))
+        self.assertIn("Atlantis", str(context.exception))
+
+    def test_stored_location_used_before_ip(self):
+        transport = _RoutingTransport(
+            geocode=None,
+            forecast={
+                "current": {"temperature_2m": 9.0, "apparent_temperature": 7.0,
+                            "weather_code": 0, "wind_speed_10m": 5.0}
+            },
+        )
+        import json
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "loc.json"
+            path.write_text(json.dumps({"latitude": -33.92, "longitude": 18.4,
+                                        "place": "Cape Town"}))
+            client = WeatherClient(location_file=str(path), transport=transport)
+            result = asyncio.run(client.current())
+        self.assertEqual(result.place, "Cape Town")
+        self.assertEqual(result.temperature_c, 9.0)
+
+    def test_ip_detection_parses_ip_api(self):
+        from ember_gateway.weather import _parse_ip_payload
+        location = _parse_ip_payload(
+            "ip_api",
+            {"status": "success", "lat": -33.92, "lon": 18.4,
+             "city": "Cape Town", "regionName": "Western Cape", "country": "South Africa"},
+        )
+        self.assertIsNotNone(location)
+        self.assertAlmostEqual(location.latitude, -33.92)
+        self.assertIn("Cape Town", location.place)
+
+    def test_ip_detection_falls_through_on_empty(self):
+        from ember_gateway.weather import _parse_ip_payload
+        self.assertIsNone(_parse_ip_payload("ip_api", {"status": "fail"}))
 
 
 class TimerStoreTests(unittest.TestCase):

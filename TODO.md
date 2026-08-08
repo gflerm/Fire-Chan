@@ -104,7 +104,10 @@ Acceptance criteria:
 ### Information and utility
 
 - [x] Add local weather only after location consent and a clearly selected data source.
-      (Open-Meteo, configured lat/lon/place via env; lat/lon 0,0 disables answers.)
+      (Open-Meteo, keyless. Named-place requests geocode anywhere; otherwise the
+      gateway uses its stored location, then IP-based geolocation with multiple
+      fallback providers, then `EMBER_WEATHER_LAT/LON`. The resolved location is
+      persisted at `EMBER_WEATHER_LOCATION_FILE`.)
 - [x] Add grounded web search answers from DuckDuckGo results.
 - [x] Add basic calculations and unit conversions through deterministic tools.
       (safe AST-evaluated arithmetic incl. spoken words; linear unit conversions

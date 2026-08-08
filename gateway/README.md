@@ -103,6 +103,14 @@ Time questions are answered directly from the Pi clock using `EMBER_TIMEZONE` ra
 being sent to the language model. The default is `Africa/Johannesburg`; verify the Pi clock
 with `timedatectl` after installation.
 
+Weather needs no API key. A place name in the request ("what's the weather in Tokyo")
+wins; otherwise the gateway uses its stored location, then IP-based geolocation (trying
+`ipapi.co`, `ipwho.is`, `ipinfo.io`, and `ip-api.com` in order), then the optional
+`EMBER_WEATHER_LAT`/`EMBER_WEATHER_LON` fallback. The resolved location is persisted to
+`EMBER_WEATHER_LOCATION_FILE` (`/var/lib/ember/weather_location.json`) so it is detected
+once and reused; a confirmed named place also overwrites it. Conditions come from
+Open-Meteo and are read out deterministically.
+
 ## Supported local commands
 
 | Prompt intent | Device result |
@@ -119,7 +127,8 @@ with `timedatectl` after installation.
 | "Turn it up / down" | Relative step action `volume=+10` / `volume=-10` |
 | Status | Local device-fact answer from the Fire's `X-Ember-Device-Status` header |
 | "Search the web for X" / "look up X" | Grounded answer from DuckDuckGo Instant Answer results |
-| Weather / temperature / rain questions | Current conditions from Open-Meteo at the configured location |
+| Weather / temperature / rain questions | Current conditions from Open-Meteo for the gateway's location |
+| "What's the weather in Paris?" | Same, geocoded by place name anywhere in the world |
 | "Set a timer for 5 minutes" / "remind me" | Named per-device timer announced on the next turn |
 | "What timers are active?" | List of pending per-device timers |
 | "Cancel my timers" | Removes the device's pending timers |

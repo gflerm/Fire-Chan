@@ -51,6 +51,7 @@ weather = WeatherClient(
     settings.weather_latitude,
     settings.weather_longitude,
     settings.weather_place,
+    location_file=settings.weather_location_file,
 )
 timers = TimerStore()
 app = FastAPI(title="Ember Local Voice Gateway", version=__version__)
@@ -81,14 +82,18 @@ async def handle_search(query: str) -> tuple[str, str, str]:
     return reply.text, "curious", None
 
 
-async def handle_weather() -> tuple[str, str, str]:
-    """Fetch current conditions and describe them deterministically."""
-    if settings.weather_latitude == 0 and settings.weather_longitude == 0:
-        return ("I don't have a location configured for weather yet.", "confused", None)
+async def handle_weather(place: str | None = None) -> tuple[str, str, str]:
+    """Fetch current conditions for a named place or the gateway location."""
+    from .weather import LocationUnavailable
+
     try:
-        current = await weather.current()
+        current = await weather.current(place=place)
     except httpx.HTTPError:
         return "I could not reach the weather service right now.", "sad", None
+    except LocationUnavailable as error:
+        return str(error), "confused", None
+    except (KeyError, ValueError):
+        return "The weather service returned something I could not read.", "confused", None
     return current.describe(), "happy", None
 
 
@@ -200,7 +205,7 @@ async def voice(
         elif command.action == "search" and command.query:
             reply, expression, action = await handle_search(command.query)
         elif command.action == "weather":
-            reply, expression, action = await handle_weather()
+            reply, expression, action = await handle_weather(command.query or None)
         elif command.action == "timer":
             reply, expression = handle_timer_schedule(device_id, command)
         elif command.action == "timer-list":

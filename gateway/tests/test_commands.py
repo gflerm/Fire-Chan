@@ -172,6 +172,16 @@ class CommandTests(unittest.TestCase):
         result = match_local_command("what is the weather like?")
         self.assertEqual(result.action, "weather")
 
+    def test_weather_intent_with_place(self):
+        result = match_local_command("what is the weather like in Cape Town?")
+        self.assertEqual(result.action, "weather")
+        self.assertEqual(result.query, "cape town")
+
+    def test_temperature_with_place(self):
+        result = match_local_command("what is the temperature in Paris?")
+        self.assertEqual(result.action, "weather")
+        self.assertIn("paris", result.query)
+
     def test_calc_intent(self):
         result = match_local_command("what is 6 times 8?")
         self.assertEqual(result.action, "calc")

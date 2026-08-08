@@ -418,3 +418,32 @@ MULTI_TURN_DEPLOY_VERIFY status note, and this log. File cleanup: renamed
   slices 1-4 together.
 - Next slice options: pause/resume timers, persistent reminders, or live
   verification of the cumulative Priority 3 gateway commands on the Pi/Fire.
+
+## 2026-08-08 (continued) — Priority 3 slice 5: named-place + IP-geolocated weather
+
+- `weather.py` upgraded beyond fixed lat/lon:
+  - `Location` dataclass (lat/lon/place).
+  - Keyless Open-Meteo **geocoding** (`geocoding-api.open-meteo.com/v1/search`):
+    "what's the weather in Tokyo?" resolves any place by name.
+  - **IP geolocation** fallback chain: `ipapi.co/json` → `ipwho.is` → `ipinfo.io`
+    → `ip-api.com/json` (HTTP-only), each with its own tolerant parser
+    (`_parse_ip_api` for `lat`/`lon`, `_parse_ip_payload` dispatch). The first
+    provider that returns a valid location wins; HTTP/parse failures fall
+    through to the next.
+  - Resolution order: named place (always wins, geocoded, persisted) → stored
+    location → IP detection → `EMBER_WEATHER_LAT/LON`. Result persisted to
+    `EMBER_WEATHER_LOCATION_FILE` (default `/var/lib/ember/weather_location.json`),
+    so detection happens once and is reused; a named place overwrites it.
+  - `LocationUnavailable` yields an honest apology, never a hallucinated answer.
+- `commands.py`: `_match_weather` now captures a trailing place ("in Paris") into
+  `query`. `main.py`: `handle_weather(command.query or None)`.
+- `config.py`: added `weather_location_file` (`EMBER_WEATHER_LOCATION_FILE`);
+  `.env.example` documents the vars (defaults `0,0` = unset fallback).
+- Version bumped to `0.7.0`; 81 tests passing (new geocode, stored-location,
+  ip-parse, and place-capture tests).
+- Live (unmocked) verification from the dev machine: IP detection resolved to
+  Cape Town, Western Cape, South Africa; named lookups for Cape Town (light
+  drizzle, 13C) and Tokyo (mainly clear, 24C, feels like 30) both correct.
+- Deployed to the Pi via `sudo scripts/update-pi.sh`; `/health` OK, version 0.7.0.
+- Remaining: user confirmation of the detected location, and a live Fire turn
+  exercising "what's the weather" end to end.

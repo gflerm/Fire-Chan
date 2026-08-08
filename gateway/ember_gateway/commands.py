@@ -255,7 +255,11 @@ def _match_weather(text: str) -> CommandResult | None:
         r"hot|cold|what'?s it like outside)\b",
         text,
     ):
-        return CommandResult("Let me check the weather.", "curious", "weather")
+        place = ""
+        place_match = re.search(r"\b(?:in|for|at)\s+([a-z][a-z' -]+?)\??\s*$", text)
+        if place_match:
+            place = re.sub(r"\s+", " ", place_match.group(1)).strip().strip("?") or ""
+        return CommandResult("Let me check the weather.", "curious", "weather", query=place)
     return None
 
 

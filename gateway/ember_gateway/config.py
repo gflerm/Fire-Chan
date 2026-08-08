@@ -27,6 +27,7 @@ class Settings:
     weather_latitude: float
     weather_longitude: float
     weather_place: str
+    weather_location_file: str
 
     @classmethod
     def from_environment(cls) -> "Settings":
@@ -75,4 +76,7 @@ class Settings:
             weather_latitude=float(os.getenv("EMBER_WEATHER_LAT", "0")),
             weather_longitude=float(os.getenv("EMBER_WEATHER_LON", "0")),
             weather_place=os.getenv("EMBER_WEATHER_PLACE", "your area"),
+            weather_location_file=os.getenv(
+                "EMBER_WEATHER_LOCATION_FILE", "/var/lib/ember/weather_location.json"
+            ),
         )

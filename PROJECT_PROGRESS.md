@@ -524,6 +524,27 @@ pio device monitor --port COMxx --baud 115200
 - Remaining Priority 3 info/utility: optional calendar, morning/evening
   summaries, and the separate location-consent flow.
 
+## 2026-08-08 status (Priority 3 slice 5: named-place + IP-geolocated weather, gateway 0.7.0)
+
+- `weather.py` upgraded: `Location` dataclass, keyless Open-Meteo **geocoding**
+  ("weather in Tokyo" resolves any city in the world), and IP-based location
+  auto-detection with a fallback chain — `ipapi.co` → `ipwho.is` → `ipinfo.io`
+  → `ip-api.com` — each with its own JSON parser (`_parse_ip_api`, etc.).
+- Location resolution order: named place in the request (always wins, geocoded,
+  and persisted) → stored location → IP detection → `EMBER_WEATHER_LAT/LON`.
+  The resolved location is persisted to `EMBER_WEATHER_LOCATION_FILE`
+  (`/var/lib/ember/weather_location.json`) so it is detected once and reused.
+  Unresolvable locations raise `LocationUnavailable` and produce an honest
+  apology (never a hallucinated answer).
+- `commands.py`: `_match_weather` extracts a trailing place ("in Paris") into
+  `query`; `handle_weather(command.query)` in `main.py` passes it through.
+  `config.py` gains `weather_location_file` (`EMBER_WEATHER_LOCATION_FILE`).
+- Live verification from the dev machine (not mocked): IP detection returned
+  Cape Town/Western Cape, South Africa; named lookups for Cape Town and Tokyo
+  both returned correct current conditions. 81 tests pass locally.
+- Deployed to the Pi (`sudo scripts/update-pi.sh`), health OK. A live device
+  turn still to confirm on the Fire. See `opencode_update.md`.
+
 ## 2026-08-08 status (Priority 3 slice 2: Fire volume + status, firmware 0.11.1)
 
 - Fire `0.11.1-volume-status`: `AudioFeedback::setVolumePercent` re-added;

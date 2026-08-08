@@ -79,11 +79,16 @@ honestly instead of guessing.
 
 | Say | Ember's result |
 |---|---|
-| "What's the weather like?" | Current conditions, temperature, wind at the configured location |
+| "What's the weather like?" | Current conditions, temperature, wind for the gateway's location |
+| "What's the weather in Paris?" | Conditions for that place, geocoded by name anywhere in the world |
 | "Is it raining?" / "How hot is it?" / "Forecast?" | Same weather answer |
 
-Powered by Open-Meteo at `EMBER_WEATHER_LAT/LON`. Lat/lon configured as 0,0
-disables weather answers.
+Powered by Open-Meteo (no API key). A named place in the request always wins.
+Without one, the gateway uses its stored location, otherwise IP-based geolocation
+(tries `ipapi.co` → `ipwho.is` → `ipinfo.io` → `ip-api.com`), otherwise
+`EMBER_WEATHER_LAT/LON`. The resolved location is persisted at
+`EMBER_WEATHER_LOCATION_FILE` (`/var/lib/ember/weather_location.json`) so it's
+detected once and reused.
 
 ### Calculations and conversions
 
