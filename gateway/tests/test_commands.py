@@ -172,6 +172,16 @@ class CommandTests(unittest.TestCase):
         result = match_local_command("what is the weather like?")
         self.assertEqual(result.action, "weather")
 
+    def test_calc_intent(self):
+        result = match_local_command("what is 6 times 8?")
+        self.assertEqual(result.action, "calc")
+        self.assertEqual(result.reply, "That's 48.")
+
+    def test_conversion_intent(self):
+        result = match_local_command("convert 10 kilometers to miles")
+        self.assertEqual(result.action, "calc")
+        self.assertIn("6.2137", result.reply)
+
     def test_search_shorts_are_not_intents(self):
         self.assertIsNone(match_local_command("search it"))
         self.assertIsNone(match_local_command("look that up"))

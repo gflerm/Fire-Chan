@@ -380,3 +380,41 @@ MULTI_TURN_DEPLOY_VERIFY status note, and this log. File cleanup: renamed
 - REMINDER: the running Pi stack still predates slices 1-3; update with
   `sudo ./scripts/update-pi.sh` before live testing these tools.
 - Next slice: deterministic calculations and unit conversions in the gateway.
+
+## 2026-08-08 (continued) — Priority 3 slice 4: calculations and unit conversions
+
+- New `gateway/ember_gateway/calc.py`, entirely deterministic and never routed to
+  the language model:
+  - `evaluate_arithmetic`: parses a numeric-only expression with `ast.parse(mode="eval")`
+    and evaluates through a whitelisted walk (`_evaluate_ast`): `Expression`,
+    `Constant`, `BinOp` (`+ - * / **`), and signed literals only. No names, calls,
+    attributes, or imports are ever evaluated, so transcript text cannot execute
+    code. `CalcError` normalizes syntax errors, division by zero, `OverflowError`,
+    and non-finite results into a spoken apology.
+  - `_translate_expression`: rewrites spoken words into symbols and number words
+    into digits ("what is six times eight" -> `6*8`, "two to the power of ten" ->
+    `2**10`, "10 divided by 4" -> `10/4`), then strips anything that is not a
+    digit or operator; returns `None` when no digits remain (falls through to the
+    model). Division by zero yields an honest "cannot work that out" instead of a
+    hallucinated value.
+  - `convert` + `_UNITS`/`_TO_BASE`: linear length, mass, volume, and speed units
+    (metric + imperial) normalized through base-unit factors, so both directions
+    work; `_find_category` rejects mixed-category requests (`CalcError`).
+    `convert_temperature` handles Celsius/Fahrenheit/Kelvin with shifted scales.
+  - `parse_calculation` tries arithmetic then conversion and returns the spoken
+    answer or `None`.
+- `commands.py`: `_match_calc` (action="calc") wired between weather and status.
+  It deliberately runs on the RAW text (not the space-normalized form) so literal
+  symbols like `2+2` survive; word forms work through normalization regardless.
+  New intents: "what is 6 times 8?", "convert 10 kilometers to miles",
+  "100 celsius in fahrenheit", "what is two plus two?".
+- Gateway version bumped to `0.6.0`.
+- Tests: 73 pass (`test_calc.py` added: 18 tests covering arithmetic/words/power/
+  precedence/parentheses, unit conversion incl. miles/yards, temperature, and
+  safe rejection of non-numeric input; `test_commands.py` +2 intent tests).
+- Docs updated: TODO.md (calc bullet checked off), PROJECT_PROGRESS.md (slice 4
+  note), gateway/README.md (command table rows), this log.
+- REMINDER: update the Pi (`sudo ./scripts/update-pi.sh`) before live-testing
+  slices 1-4 together.
+- Next slice options: pause/resume timers, persistent reminders, or live
+  verification of the cumulative Priority 3 gateway commands on the Pi/Fire.

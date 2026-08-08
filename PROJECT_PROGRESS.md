@@ -497,6 +497,33 @@ pio device monitor --port COMxx --baud 115200
 - Gateway version `0.5.0`; 53 tests passing locally. See `opencode_update.md`.
 - Next slice: deterministic calculations and unit conversions in the gateway.
 
+## 2026-08-08 status (Priority 3 slice 4: calculations and unit conversions, gateway 0.6.0)
+
+- New `gateway/ember_gateway/calc.py`: fully deterministic, unit-tested math
+  helpers that never consult the language model.
+  - `evaluate_arithmetic` evaluates a numeric-only expression through a whitelisted
+    AST walk (add/sub/mul/div/pow over literals only) — transcript text cannot
+    execute arbitrary code. `CalcError` covers syntax, division by zero,
+    overflow, and non-finite results.
+  - `_translate_expression` maps spoken words to operators and numbers
+    ("six times 8", "two to the power of ten", "10 divided by 4") before
+    evaluation; unrecognized phrases return `None` so the model can answer.
+  - `convert` / `_UNITS`/`_TO_BASE` cover linear length, mass, volume, and speed
+    units (metric + imperial) via base-unit factors; `convert_temperature`
+    handles Celsius/Fahrenheit/Kelvin with shifted scales. Mixed-category
+    requests raise `CalcError`.
+  - `parse_calculation` dispatches arithmetic then conversion and returns the
+    spoken answer or `None`.
+- `commands.py`: `_match_calc` runs on the raw (non-normalized) text so symbols
+  like `+` survive, wired between weather and status in `match_local_command`.
+  New intents: "what is 6 times 8?", "convert 10 kilometers to miles",
+  "100 celsius in fahrenheit". Handlers return `(reply, expression, action)`
+  with `action="calc"`.
+- Gateway version `0.6.0`; 73 tests passing locally (18 new calc tests +
+  2 command integration tests). See `opencode_update.md`.
+- Remaining Priority 3 info/utility: optional calendar, morning/evening
+  summaries, and the separate location-consent flow.
+
 ## 2026-08-08 status (Priority 3 slice 2: Fire volume + status, firmware 0.11.1)
 
 - Fire `0.11.1-volume-status`: `AudioFeedback::setVolumePercent` re-added;

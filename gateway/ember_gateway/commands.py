@@ -3,6 +3,8 @@ from datetime import datetime
 import re
 from zoneinfo import ZoneInfo
 
+from .calc import parse_calculation
+
 
 @dataclass(frozen=True)
 class CommandResult:
@@ -124,6 +126,8 @@ def match_local_command(
         return search
     if weather := _match_weather(normalized):
         return weather
+    if calc := _match_calc(text):
+        return calc
     if re.search(
         r"\b(status|how are you|battery|wi-?fi|wifi|storage|space|firmware|"
         r"what are your levels|how much storage|are you connected)\b",
@@ -253,6 +257,14 @@ def _match_weather(text: str) -> CommandResult | None:
     ):
         return CommandResult("Let me check the weather.", "curious", "weather")
     return None
+
+
+def _match_calc(text: str) -> CommandResult | None:
+    """Deterministic arithmetic and unit-conversion questions."""
+    answer = parse_calculation(text)
+    if answer is None:
+        return None
+    return CommandResult(answer, "happy", "calc")
 
 
 def choose_expression(text: str) -> str:

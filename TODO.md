@@ -106,7 +106,10 @@ Acceptance criteria:
 - [x] Add local weather only after location consent and a clearly selected data source.
       (Open-Meteo, configured lat/lon/place via env; lat/lon 0,0 disables answers.)
 - [x] Add grounded web search answers from DuckDuckGo results.
-- [ ] Add basic calculations and unit conversions through deterministic tools.
+- [x] Add basic calculations and unit conversions through deterministic tools.
+      (safe AST-evaluated arithmetic incl. spoken words; linear unit conversions
+      for length/mass/volume/speed plus Celsius/Fahrenheit/Kelvin; unrecognized
+      math falls through to the model.)
 - [ ] Provide calendar integration only as an optional, separately authorized feature.
 - [ ] Add configurable morning/evening summaries with a physical or web disable control.
 

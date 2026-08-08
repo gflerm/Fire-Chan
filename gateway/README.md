@@ -123,6 +123,8 @@ with `timedatectl` after installation.
 | "Set a timer for 5 minutes" / "remind me" | Named per-device timer announced on the next turn |
 | "What timers are active?" | List of pending per-device timers |
 | "Cancel my timers" | Removes the device's pending timers |
+| "What is 6 times 8?" | Deterministic safe arithmetic (incl. spoken words, powers) |
+| "Convert 10 km to miles" | Deterministic unit conversion (length/mass/volume/speed/temperature) |
 
 Volume intents resolve deterministically in the gateway: absolute requests pass the
 target level and relative ones pass a fixed ±10 step, so the Fire owns the current
