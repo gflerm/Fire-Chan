@@ -461,3 +461,17 @@ MULTI_TURN_DEPLOY_VERIFY status note, and this log. File cleanup: renamed
   plays a graceful prompt instead of showing the error face. No session entry is
   recorded for an empty turn.
 - Version bumped to `0.7.1`; 81 tests still pass; compile check OK.
+
+## 2026-08-08 (continued) — Treat whisper no-speech markers as empty (gateway 0.7.2)
+
+- Live test of the no-speech path showed whisper.cpp returns `[BLANK_AUDIO]`
+  (not an empty string) for silent prompts. That leaked into the language model
+  and produced an off-topic reply instead of a graceful "didn't catch that".
+- `services.py: transcribe()` now returns `""` for empty text and any
+  bracketed whisper no-speech marker (e.g. `[BLANK_AUDIO]`), so the voice
+  endpoint's no-speech branch handles it consistently with a 200 + gentle
+  prompt and a `confused` expression.
+- New `VoiceServicesTests` in `test_tools.py` (3 tests: blank marker, real
+  transcript, empty payload). 84 tests pass.
+- Version bumped to `0.7.2`. This supersedes the 0.7.1 422 fix for the common
+  silent-prompt path.

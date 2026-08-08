@@ -87,7 +87,13 @@ class LocalVoiceServices:
                 )
         response.raise_for_status()
         payload = response.json()
-        return str(payload.get("text", "")).strip()
+        text = str(payload.get("text", "")).strip()
+        # whisper.cpp returns bracketed markers for no-speech audio (e.g.
+        # "[BLANK_AUDIO]"). Treat those as an empty transcript so the gateway
+        # can respond gracefully instead of feeding them to the language model.
+        if not text or (text.startswith("[") and text.endswith("]")):
+            return ""
+        return text
 
     async def chat(self, messages: list[dict]) -> ConversationResult:
         return await self.conversation.chat(messages)

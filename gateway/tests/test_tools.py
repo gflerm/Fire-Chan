@@ -152,6 +152,48 @@ class WeatherTests(unittest.TestCase):
         self.assertIsNone(_parse_ip_payload("ip_api", {"status": "fail"}))
 
 
+class VoiceServicesTests(unittest.TestCase):
+    def _transcribe(self, payload: dict) -> str:
+        from unittest import mock
+        from pathlib import Path
+        import tempfile
+        import ember_gateway.services as services_module
+
+        transport = _Transport(payload)
+        services = services_module.LocalVoiceServices(
+            "http://whisper.test", None, "http://piper.test"
+        )
+
+        class _Client(httpx.AsyncClient):
+            def __init__(self, *args, **kwargs):
+                kwargs["transport"] = transport
+                super().__init__(*args, **kwargs)
+
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as handle:
+            handle.write(b"RIFF")
+            path = Path(handle.name)
+
+        async def _go():
+            with mock.patch.object(services_module.httpx, "AsyncClient", _Client):
+                return await services.transcribe(path)
+
+        try:
+            return asyncio.run(_go())
+        finally:
+            path.unlink(missing_ok=True)
+
+    def test_blank_audio_marker_is_empty_transcript(self):
+        self.assertEqual(self._transcribe({"text": "[BLANK_AUDIO]"}), "")
+
+    def test_real_transcript_passes_through(self):
+        self.assertEqual(
+            self._transcribe({"text": "  what time is it  "}), "what time is it"
+        )
+
+    def test_empty_payload_is_empty_transcript(self):
+        self.assertEqual(self._transcribe({"text": ""}), "")
+
+
 class TimerStoreTests(unittest.TestCase):
     def test_add_and_due(self):
         store = TimerStore()
