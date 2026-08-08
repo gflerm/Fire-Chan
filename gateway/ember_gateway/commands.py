@@ -29,10 +29,47 @@ def _volume_target(step: int) -> str:
     return f"volume={'+' if step >= 0 else ''}{step}"
 
 
+def parse_device_status(text: str) -> dict[str, str]:
+    """Parse a compact ``key=value;...`` device-status header.
+
+    The Fire sends its locally held facts (firmware, Wi-Fi, battery, free
+    storage, mute) on every voice request. Unknown or invalid fields are
+    simply dropped so a missing feature cannot break status answers.
+    """
+    facts: dict[str, str] = {}
+    for pair in (text or "").split(";"):
+        if "=" not in pair:
+            continue
+        key, value = pair.split("=", 1)
+        key = key.strip().lower()
+        value = value.strip()
+        if key and value:
+            facts[key] = value
+    return facts
+
+
+def _status_describe(facts: dict[str, str]) -> str:
+    parts = []
+    if facts.get("wifi") == "1":
+        parts.append("connected to Wi-Fi")
+    elif "wifi" in facts:
+        parts.append("offline from Wi-Fi")
+    if "battery" in facts:
+        try:
+            percent = int(facts["battery"])
+            parts.append(f"about {percent}% battery")
+        except ValueError:
+            pass
+    if "fw" in facts:
+        parts.append(f"running firmware {facts['fw']}")
+    return ", ".join(parts) or None
+
+
 def match_local_command(
     text: str,
     timezone: str = "Africa/Johannesburg",
     now: datetime | None = None,
+    device_status: str = "",
 ) -> CommandResult | None:
     normalized = re.sub(r"[^a-z0-9']+", " ", text.lower()).strip()
 
@@ -74,7 +111,9 @@ def match_local_command(
     if volume := _match_volume(normalized):
         return volume
     if re.search(r"\b(status|how are you)\b", normalized):
-        return CommandResult("I'm online and feeling bright.", "happy", "status")
+        describe = _status_describe(parse_device_status(device_status))
+        reply = f"I'm {describe}." if describe else "I'm online and feeling bright."
+        return CommandResult(reply, "happy", "status")
     return None
 
 

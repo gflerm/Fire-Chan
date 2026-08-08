@@ -13,6 +13,7 @@ class AudioFeedback {
   void update(uint32_t nowMs);
   void toggleMute();
   void setMuted(bool muted);
+  void setVolumePercent(uint8_t volumePercent);
   void suspend();
   void resume();
   bool muted() const { return muted_; }

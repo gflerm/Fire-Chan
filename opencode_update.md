@@ -314,3 +314,26 @@ MULTI_TURN_DEPLOY_VERIFY status note, and this log. File cleanup: renamed
   plus existing). Run locally with `PYTHONPATH=gateway python -m unittest discover -s tests`.
 - Not committed yet; device-side application of `volume=` actions and status facts
   remain Priority Three slice 2.
+
+## 2026-08-08 (continued) — Priority 3 slice 2: Fire volume + device status
+
+- Fire `0.11.1-volume-status` (flashed and boot-verified):
+  - `AudioFeedback::setVolumePercent` re-added (was reverted with the streaming
+    experiment); `begin()` now delegates to it.
+  - `AssistantDirective` gained `AssistantAction::Volume` plus
+    `hasVolume/volumeAbsolute/volumeTarget/volumeDelta`; `parseVolume` accepts
+    `volume=40`, `volume=40%`, `volume=+10`, `volume=-10`.
+  - `Application::setAudioVolume` clamps 0-100, applies to the speaker, persists
+    `config_.volumePercent` (NVS + SD backup). Applied after Speech finishes,
+    like mute.
+  - `Application::buildDeviceStatus` uploads `X-Ember-Device-Status` every turn
+    (`fw=...;wifi=...;sd_free_mb=...;battery=...`); `ConfigManager` gained
+    `sdFreeBytes()/sdTotalBytes()`.
+- Gateway `0.4.1`: `parse_device_status` + `_status_describe` in commands.py;
+  `/v1/voice` reads `X-Ember-Device-Status` and the "status"/"how are you" reply
+  is grounded in those facts when present. 30 tests passing.
+- Boot capture on device: `[CONFIG] volume=75% muted=false`, Wi-Fi online
+  (`192.168.8.124`, rssi=-54), gateway task ready, PSRAM test fail as documented
+  (optional PSRAM not fitted). Stable heap while idle.
+- Definition of done for slice 2: a live spoken volume turn through the gateway
+  and a confirmed persisted value. Not yet physically verified on this session.

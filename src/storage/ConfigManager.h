@@ -14,6 +14,8 @@ class ConfigManager {
 
   bool sdAvailable() const { return sdAvailable_; }
   bool dirty() const { return dirty_; }
+  uint64_t sdFreeBytes() const;
+  uint64_t sdTotalBytes() const;
 
  private:
   bool loadNvs(AppConfig& config);

@@ -15,7 +15,7 @@ enum class VoiceGatewayEvent : uint8_t {
 class VoiceGatewayClient {
  public:
   void begin();
-  bool submit(const char* recordingPath);
+  bool submit(const char* recordingPath, const char* deviceStatus = nullptr);
   VoiceGatewayEvent update();
   void setDeviceId(const char* id);
 
@@ -52,6 +52,7 @@ class VoiceGatewayClient {
   char action_[kHintCapacity] = {};
   char error_[kErrorCapacity] = {};
   char deviceId_[33] = {};
+  char deviceStatus_[192] = {};
   uint8_t downloadBuffer_[kDownloadBufferSize] = {};
 };
 

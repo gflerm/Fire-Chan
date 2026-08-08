@@ -78,6 +78,15 @@ bool ConfigManager::mountSd() {
   return true;
 }
 
+uint64_t ConfigManager::sdFreeBytes() const {
+  if (!sdAvailable_) return 0;
+  return SD.totalBytes() > SD.usedBytes() ? SD.totalBytes() - SD.usedBytes() : 0;
+}
+
+uint64_t ConfigManager::sdTotalBytes() const {
+  return sdAvailable_ ? SD.totalBytes() : 0;
+}
+
 bool ConfigManager::writeSdBackup(const AppConfig& config) {
   if (!sdAvailable_) return false;
   if (SD.exists(kTemporaryPath) && !SD.remove(kTemporaryPath)) return false;

@@ -74,6 +74,7 @@ async def voice(
     file: UploadFile = File(...),
     _: None = Depends(authorize),
     x_ember_device: str = Header(default=""),
+    x_ember_device_status: str = Header(default=""),
 ) -> dict:
     device_id = x_ember_device.strip() or "default"
     request_started = time.perf_counter()
@@ -101,7 +102,9 @@ async def voice(
     if not transcript:
         raise HTTPException(status_code=422, detail="No speech was detected")
 
-    command = match_local_command(transcript, settings.timezone)
+    command = match_local_command(
+        transcript, settings.timezone, device_status=x_ember_device_status.strip()
+    )
     if command:
         reply, expression, action = command.reply, command.expression, command.action
         reply_provider = "local-command"

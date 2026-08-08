@@ -471,3 +471,18 @@ pio device monitor --port COMxx --baud 115200
 - Remaining Priority 3 slice 2: apply `volume=...` actions on-device (re-add
   `setVolumePercent`), persist to NVS, and report device status facts (Wi-Fi,
   battery, mute, free storage, firmware version). Not started.
+
+## 2026-08-08 status (Priority 3 slice 2: Fire volume + status, firmware 0.11.1)
+
+- Fire `0.11.1-volume-status`: `AudioFeedback::setVolumePercent` re-added;
+  `AssistantDirectiveParser` parses `volume=N`, `volume=+N`, `volume=-N`;
+  `Application` applies and persists the result via NVS/SD (config recording in
+  1.5 s). Boot verified: volume 75%, Wi-Fi online, gateway task ready.
+- The Fire now uploads a compact `X-Ember-Device-Status` header every turn
+  (`fw=...;wifi=...;sd_free_mb=...;battery=...`). Gateway
+  `parse_device_status` / `_status_describe` ground the "status" reply in those
+  facts (Wi-Fi, battery %, firmware). Gateway `0.4.1`; 30 tests passing.
+- Definition of done for the volume slice still pending: a live spoken turn
+  through the gateway changing the volume and confirming persistence.
+- Battery reporting logs `na` on this board if `M5.Power.getBatteryLevel()` is
+  unsupported; not yet used for any low-battery decisions (see Priority 4).

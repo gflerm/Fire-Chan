@@ -7,14 +7,21 @@ namespace firechan {
 void AudioFeedback::begin(uint8_t volumePercent, bool muted) {
   M5.Mic.end();
   M5.Speaker.begin();
+  setVolumePercent(volumePercent);
+  muted_ = muted;
+  Serial.printf("[AUDIO] non-blocking cues ready volume=%u%% speech_level=%u muted=%s\n",
+                volumePercent, speechVolume_, muted_ ? "true" : "false");
+}
+
+void AudioFeedback::setVolumePercent(uint8_t volumePercent) {
+  volumePercent = constrain(volumePercent, 0, 100);
   // Cap expression cues below the speaker's full hardware range.
   hardwareVolume_ = static_cast<uint8_t>(volumePercent * 96U / 100U);
   // Speech needs more headroom than the deliberately quiet expression cues.
   speechVolume_ = static_cast<uint8_t>(volumePercent * 217U / 100U);
   M5.Speaker.setVolume(hardwareVolume_);
-  muted_ = muted;
-  Serial.printf("[AUDIO] non-blocking cues ready volume=%u%% speech_level=%u muted=%s\n",
-                volumePercent, speechVolume_, muted_ ? "true" : "false");
+  Serial.printf("[AUDIO] volume set to %u%% speech_level=%u\n", volumePercent,
+                speechVolume_);
 }
 
 void AudioFeedback::clear() {

@@ -2,7 +2,7 @@
 
 **Created:** 2026-08-04
 
-**Current firmware:** `0.11.0-download-conn`
+**Current firmware:** `0.11.1-volume-status`
 
 **Current gateway experiment:** Optional Gemini `gemini-3.5-flash-lite` conversation
 with minimal thinking and automatic Ollama fallback; 8 kHz canonical WAV replies
@@ -81,11 +81,12 @@ Acceptance criteria:
 
 - [x] Offer concise help: “What can you do?”
 - [x] Repeat the last response.
-- [x] Change volume by intent or percentage with safe clamp to 0–100 (gateway-side
-      commands emit `volume=N` or relative `volume=+N`/`volume=-N` steps; device-side
-      application is point three slice two).
-- [ ] Report Wi-Fi, Pi connectivity, battery state, mute state, free storage, and firmware version.
-- [ ] Apply a `volume=...` action on the device and persist it in NVS.
+- [x] Change volume by intent or percentage with safe clamp to 0–100 (gateway
+      commands emit `volume=N` or relative `volume=+N`/`volume=-N`; the Fire
+      applies and persists them to NVS; live device verification pending).
+- [x] Report Wi-Fi, Pi connectivity, battery state, mute state, free storage, and
+      firmware version (Fire uploads `X-Ember-Device-Status` facts with every
+      turn; the gateway grounds the "status" reply from them).
 - [ ] Change expression, play a named sound, sleep, wake, mute, and unmute.
 - [ ] Stop speaking.
 - [ ] Recognize uncertainty and say when a request cannot be completed.

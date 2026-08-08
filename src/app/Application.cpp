@@ -22,6 +22,27 @@ AppEventType Application::mapInputEvent(InputEvent event) const {
   }
 }
 
+void Application::buildDeviceStatus(char* buffer, size_t size) const {
+  char wifi[8];
+  snprintf(wifi, sizeof(wifi), "%d", network_.connected() ? 1 : 0);
+  char sdMb[16];
+  snprintf(sdMb, sizeof(sdMb), "%llu",
+           static_cast<unsigned long long>(configManager_.sdFreeBytes() / (1024 * 1024)));
+  int batteryPercent = -1;
+  if (M5.Power.getBatteryLevel() >= 0) {
+    batteryPercent = M5.Power.getBatteryLevel();
+  }
+  char battery[16];
+  if (batteryPercent >= 0) {
+    snprintf(battery, sizeof(battery), "%d", batteryPercent);
+  } else {
+    snprintf(battery, sizeof(battery), "na");
+  }
+  snprintf(buffer, size, "fw=%s;wifi=%s;sd_free_mb=%s;battery=%s",
+           FIRECHAN_VERSION, wifi, sdMb, battery);
+  Serial.printf("[ASSISTANT] device status: %s\n", buffer);
+}
+
 void Application::handleCommandEvent(const AppEvent& event) {
   if (event.type == AppEventType::VoiceCaptureRequested && !voice_.recording() &&
       !voiceGateway_.busy() && !responsePlayer_.busy()) {
@@ -62,12 +83,28 @@ void Application::setAudioMuted(bool muted, uint32_t nowMs) {
   configManager_.markDirty(nowMs);
 }
 
+void Application::setAudioVolume(uint8_t volumePercent, uint32_t nowMs) {
+  volumePercent = constrain(volumePercent, 0, 100);
+  if (config_.volumePercent == volumePercent) return;
+  audio_.setVolumePercent(volumePercent);
+  config_.volumePercent = volumePercent;
+  configManager_.markDirty(nowMs);
+}
+
 void Application::applyPendingAssistantDirective(uint32_t nowMs) {
   if (!hasPendingDirective_) return;
   if (pendingDirective_.action == AssistantAction::Mute) {
     setAudioMuted(true, nowMs);
   } else if (pendingDirective_.action == AssistantAction::Unmute) {
     setAudioMuted(false, nowMs);
+  } else if (pendingDirective_.action == AssistantAction::Volume) {
+    if (pendingDirective_.volumeAbsolute) {
+      setAudioVolume(pendingDirective_.volumeTarget, nowMs);
+    } else {
+      int32_t target = static_cast<int32_t>(config_.volumePercent) +
+                       pendingDirective_.volumeDelta;
+      setAudioVolume(static_cast<uint8_t>(constrain(target, 0, 100)), nowMs);
+    }
   }
   Serial.printf("[ASSISTANT] apply expression=%s action=%s\n",
                 pendingDirective_.hasExpression
@@ -118,11 +155,13 @@ void Application::update() {
   if (voiceEvent == VoiceRecorderEvent::RecordingReady) {
     audio_.resume();
     events_.publish(AppEventType::VoiceRecordingReady, now);
-    if (!network_.connected() || !voiceGateway_.submit(voice_.recordingPath())) {
+    char deviceStatus[192];
+    buildDeviceStatus(deviceStatus, sizeof(deviceStatus));
+    if (!network_.connected() ||
+        !voiceGateway_.submit(voice_.recordingPath(), deviceStatus)) {
       Serial.println("[ASSISTANT] prompt not submitted; gateway unavailable");
       events_.publish(AppEventType::AssistantRequestFailed, now);
-    }
-  } else if (voiceEvent == VoiceRecorderEvent::RecordingFailed) {
+    }  } else if (voiceEvent == VoiceRecorderEvent::RecordingFailed) {
     audio_.resume();
     events_.publish(AppEventType::VoiceRecordingFailed, now);
   }

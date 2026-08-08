@@ -28,7 +28,9 @@ class Application {
   void applyAction(const BehaviorAction& action);
   void applyPendingAssistantDirective(uint32_t nowMs);
   void setAudioMuted(bool muted, uint32_t nowMs);
+  void setAudioVolume(uint8_t volumePercent, uint32_t nowMs);
   void handleCommandEvent(const AppEvent& event);
+  void buildDeviceStatus(char* buffer, size_t size) const;
 
   FaceEngine face_;
   InputManager input_;

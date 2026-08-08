@@ -12,10 +12,11 @@ selectable local or cloud conversation provider:
 ## Current deployed baseline
 
 The stack is running on a Raspberry Pi 5 with 8 GB RAM and SSD at `192.168.8.107:8088`.
-Fire firmware `0.11.0-download-conn` records a 16 kHz mono prompt, uploads it in a
-background task, downloads the response WAV to microSD, streams it with three bounded
-internal-RAM buffers, and applies the returned expression or supported device action.
-The accepted Fire speech output level is 141. Ollama remains the default and requires
+Fire firmware `0.11.1-volume-status` records a 16 kHz mono prompt, uploads it in a
+background task with its `X-Ember-Device-Status` facts, downloads the response WAV
+to microSD, streams it with three bounded internal-RAM buffers, and applies the
+returned expression, volume change, or supported device action. The accepted Fire
+speech output level is 141. Ollama remains the default and requires
 no cloud account. Gemini is optional and falls back to Ollama on network/API failure.
 Replies are served as canonical 8 kHz WAVs (`EMBER_AUDIO_RATE_HZ=8000`) to cut response
 bytes ~3.5x.
@@ -116,13 +117,14 @@ with `timedatectl` after installation.
 | "Say that again" / "repeat" | Last assistant reply replayed from device memory |
 | "Set the volume to N" | Action `volume=N` for the device to clamp to 0–100 |
 | "Turn it up / down" | Relative step action `volume=+10` / `volume=-10` |
-| Status | Local online-status response |
+| Status | Local device-fact answer from the Fire's `X-Ember-Device-Status` header |
 
 Volume intents resolve deterministically in the gateway: absolute requests pass the
-target level and relative ones pass a fixed ±10 step, so the Fire owns the current level
-and clamps the result. Device-side application of `volume=` actions and status facts
-(Wi-Fi, battery, mute, storage, firmware) is tracked in the root `TODO.md` as
-Priority Three slice two.
+target level and relative ones pass a fixed ±10 step, so the Fire owns the current
+level, clamps the result, and persists it to NVS. Device-side application of
+`volume=` actions and status facts (Wi-Fi, battery, free storage, firmware, mute)
+is live in firmware `0.11.1-volume-status`; a live spoken verification is still
+pending.
 
 Multi-turn memory, timers, reminders, provisioning, and assistant interruption behavior
 are tracked in the root `TODO.md`.

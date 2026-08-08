@@ -31,7 +31,7 @@ void VoiceGatewayClient::begin() {
   }
 }
 
-bool VoiceGatewayClient::submit(const char* recordingPath) {
+bool VoiceGatewayClient::submit(const char* recordingPath, const char* deviceStatus) {
   if (task_ == nullptr || state_ != State::Idle || WiFi.status() != WL_CONNECTED) {
     return false;
   }
@@ -42,6 +42,7 @@ bool VoiceGatewayClient::submit(const char* recordingPath) {
     return false;
   }
   strlcpy(recordingPath_, recordingPath, sizeof(recordingPath_));
+  strlcpy(deviceStatus_, deviceStatus ? deviceStatus : "", sizeof(deviceStatus_));
   transcript_[0] = reply_[0] = expression_[0] = action_[0] = error_[0] = '\0';
   state_ = State::Pending;
   xTaskNotifyGive(task_);
@@ -219,6 +220,9 @@ bool VoiceGatewayClient::performRequest() {
   request.post(kVoicePath);
   request.sendHeader("X-Ember-Token", secrets::kEmberToken);
   request.sendHeader("X-Ember-Device", deviceId_[0] ? deviceId_ : "local");
+  if (deviceStatus_[0] != '\0') {
+    request.sendHeader("X-Ember-Device-Status", deviceStatus_);
+  }
   request.sendHeader("Content-Type", String("multipart/form-data; boundary=") + kBoundary);
   request.sendHeader("Content-Length", contentLength);
   request.sendHeader("Connection", "close");
