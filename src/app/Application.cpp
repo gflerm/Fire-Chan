@@ -93,7 +93,6 @@ void Application::begin() {
   voice_.begin(configManager_.sdAvailable(), config_.maxRecordingSeconds);
   network_.begin(millis());
   voiceGateway_.begin();
-  voiceGateway_.setStreamSink(&responsePlayer_);
   responsePlayer_.begin();
   input_.begin(config_);
   faceReady_ = face_.begin(config_.displayBrightnessPercent);
@@ -119,9 +118,6 @@ void Application::update() {
   if (voiceEvent == VoiceRecorderEvent::RecordingReady) {
     audio_.resume();
     events_.publish(AppEventType::VoiceRecordingReady, now);
-    // Muted turns fall back to the existing pause-and-play path, so no
-    // streaming sink is attached and playback is skipped.
-    voiceGateway_.setStreamSink(audio_.muted() ? nullptr : &responsePlayer_);
     if (!network_.connected() || !voiceGateway_.submit(voice_.recordingPath())) {
       Serial.println("[ASSISTANT] prompt not submitted; gateway unavailable");
       events_.publish(AppEventType::AssistantRequestFailed, now);
@@ -143,15 +139,8 @@ void Application::update() {
     }
     events_.publish(AppEventType::AssistantResponseReady, now);
     if (!audio_.muted()) {
-      if (voiceGateway_.usedStream()) {
-        // Streaming playback already began while the audio downloaded; its
-        // start/finish events drive SpeakingStarted/Stopped. If the (short)
-        // reply already finished, apply the directive here.
-        if (!responsePlayer_.busy()) {
-          applyPendingAssistantDirective(now);
-        }
-      } else if (responsePlayer_.play(voiceGateway_.audioPath(), audio_.speechVolume())) {
-        audio_.suspend();
+      audio_.suspend();
+      if (responsePlayer_.play(voiceGateway_.audioPath(), audio_.speechVolume())) {
         events_.publish(AppEventType::SpeakingStarted, now);
       } else {
         audio_.resume();
@@ -167,10 +156,7 @@ void Application::update() {
   }
 
   const ResponseAudioEvent playbackEvent = responsePlayer_.update();
-  if (playbackEvent == ResponseAudioEvent::StreamStarted) {
-    audio_.suspend();
-    events_.publish(AppEventType::SpeakingStarted, now);
-  } else if (playbackEvent == ResponseAudioEvent::PlaybackFinished) {
+  if (playbackEvent == ResponseAudioEvent::PlaybackFinished) {
     audio_.resume();
     events_.publish(AppEventType::SpeakingStopped, now);
     applyPendingAssistantDirective(now);
