@@ -5,6 +5,21 @@
 A stationary, Stack-chan-inspired desktop companion on the M5Stack Fire v2.5
 with a privacy-first local voice assistant named **Ember**. No camera, no servos.
 
+---
+
+## Status
+
+> [!CAUTION]
+>
+> ### 🛑 WORK IS PAUSED — PROJECT ON HOLD
+>
+> Development has stopped. All milestones through **gateway 0.8.0** /
+> **firmware 0.12.0-alarm-ringing** are preserved and committed on both
+> `main` and `oc-updates`. The project is parked pending next hardware:
+> **ESP32-P4** (→ `Fire-chan_ESP32-P4_Variant.md`).
+
+---
+
 ## What's working
 
 - Animated face (14 expressions, blink, gaze, mouth)
@@ -44,8 +59,8 @@ with a privacy-first local voice assistant named **Ember**. No camera, no servos
 ```bash
 # (PowerShell on Windows, replace COMxx with your port)
 pio run
-pio run --target upload --upload-port COM5
-pio device monitor --port COM5 --baud 115200
+pio run --target upload --upload-port COMxx
+pio device monitor --port COMxx --baud 115200
 ```
 
 Copy `include/secrets.example.h` to `include/secrets.h` and fill in the
